@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>統計検定2級ドリル</title>
+
+<!-- PWA: manifest & theme -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#3b7dd8">
+
+<!-- PWA: iOS Safari ホーム画面追加対応 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="統計ドリル">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #3b7dd8; --primary-dark: #2c62b5;
+  --success: #22a869; --danger: #e03e3e;
+  --bg: #f4f6fb; --card: #ffffff; --text: #1a1a2e; --sub: #666;
+  --border: #dde3f0; --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,.08);
+  --diff-basic: #22a869; --diff-standard: #3b7dd8; --diff-advanced: #c0392b;
+}
+body { font-family: "Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  background: var(--bg); color: var(--text); min-height:100dvh; padding:12px; }
+h1 { font-size:1.3rem; font-weight:700; letter-spacing:.03em; }
+h2 { font-size:1.1rem; font-weight:700; margin-bottom:12px; }
+.card { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; margin-bottom:14px; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding:12px 20px; border:none; border-radius:8px; font-size:.95rem; font-weight:600;
+  cursor:pointer; transition:transform .1s,box-shadow .1s; -webkit-tap-highlight-color:transparent; }
+.btn:active { transform:scale(.96); }
+.btn-primary { background:var(--primary); color:#fff; box-shadow:0 3px 8px rgba(59,125,216,.35); }
+.btn-primary:hover { background:var(--primary-dark); }
+.btn-outline { background:#fff; color:var(--primary); border:2px solid var(--primary); }
+.btn-danger { background:var(--danger); color:#fff; box-shadow:0 3px 8px rgba(224,62,62,.3); }
+.btn-block { width:100%; margin-bottom:10px; }
+.btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.screen { display:none; } .screen.active { display:block; }
+header { display:flex; align-items:center; justify-content:space-between; padding:10px 0 16px; }
+.logo { display:flex; align-items:center; gap:8px; }
+.logo-icon { width:36px; height:36px; border-radius:8px; background:var(--primary);
+  display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.1rem; font-weight:800; }
+.unit-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.unit-chip { padding:10px 8px; border-radius:8px; border:2px solid var(--border);
+  background:#fff; font-size:.85rem; font-weight:600; cursor:pointer; text-align:center;
+  transition:all .15s; -webkit-tap-highlight-color:transparent; }
+.unit-chip:hover { border-color:var(--primary); color:var(--primary); }
+.unit-chip.selected { background:var(--primary); color:#fff; border-color:var(--primary); }
+.unit-chip.all-chip { grid-column:span 2; }
+.diff-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.diff-chip { flex:1; min-width:60px; padding:8px 6px; border:2px solid var(--border);
+  border-radius:8px; background:#fff; font-size:.82rem; font-weight:700; cursor:pointer;
+  text-align:center; transition:all .15s; }
+.diff-chip[data-diff="basic"].selected    { background:var(--diff-basic);    color:#fff; border-color:var(--diff-basic); }
+.diff-chip[data-diff="standard"].selected { background:var(--diff-standard); color:#fff; border-color:var(--diff-standard); }
+.diff-chip[data-diff="advanced"].selected { background:var(--diff-advanced); color:#fff; border-color:var(--diff-advanced); }
+.diff-chip[data-diff="all"].selected      { background:var(--primary);       color:#fff; border-color:var(--primary); }
+.count-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.count-btn { flex:1; min-width:70px; padding:10px 6px; border:2px solid var(--border);
+  border-radius:8px; background:#fff; font-size:.9rem; font-weight:600; cursor:pointer;
+  text-align:center; transition:all .15s; }
+.count-btn.selected { background:var(--primary); color:#fff; border-color:var(--primary); }
+.progress-wrap { margin-bottom:16px; }
+.progress-label { display:flex; justify-content:space-between; font-size:.8rem; color:var(--sub); margin-bottom:4px; }
+.progress-bar { height:6px; background:var(--border); border-radius:99px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--primary); border-radius:99px; transition:width .3s ease; }
+.question-text { font-size:1rem; line-height:1.7; white-space:pre-wrap; margin-bottom:18px; }
+.unit-badge { display:inline-block; padding:2px 10px; border-radius:99px;
+  background:#e8f0fd; color:var(--primary); font-size:.75rem; font-weight:700; margin-bottom:6px; }
+.diff-badge { display:inline-block; padding:2px 10px; border-radius:99px;
+  font-size:.72rem; font-weight:700; margin-bottom:10px; margin-left:6px; }
+.diff-badge.basic    { background:#eafaf2; color:var(--diff-basic); }
+.diff-badge.standard { background:#e8f0fd; color:var(--diff-standard); }
+.diff-badge.advanced { background:#fdf0f0; color:var(--diff-advanced); }
+.choices { display:flex; flex-direction:column; gap:10px; }
+.choice-btn { width:100%; padding:14px 16px; border-radius:10px; border:2px solid var(--border);
+  background:#fff; font-size:.95rem; text-align:left; cursor:pointer;
+  transition:all .15s; line-height:1.5; -webkit-tap-highlight-color:transparent; }
+.choice-btn:hover:not(:disabled) { border-color:var(--primary); background:#f0f5ff; }
+.choice-btn.correct { background:#eafaf2; border-color:var(--success); color:var(--success); font-weight:700; }
+.choice-btn.wrong   { background:#fff0f0; border-color:var(--danger);  color:var(--danger); }
+.choice-btn:disabled { cursor:default; }
+.explanation { margin-top:16px; padding:14px; border-radius:10px;
+  background:#f8faff; border-left:4px solid var(--primary);
+  font-size:.9rem; line-height:1.7; white-space:pre-wrap; display:none; }
+.explanation.show { display:block; }
+.result-badge { display:inline-flex; align-items:center; gap:6px; font-size:1rem; font-weight:700; margin-bottom:10px; }
+.result-badge.ok { color:var(--success); } .result-badge.ng { color:var(--danger); }
+.info-box { margin-top:12px; padding:12px 14px; border-radius:8px; font-size:.87rem; line-height:1.6; }
+.info-box-point   { background:#fffbea; border-left:4px solid #f0b429; }
+.info-box-mistake { background:#fff5f5; border-left:4px solid var(--danger); }
+.info-box-title { font-size:.78rem; font-weight:700; margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em; }
+.info-box-point .info-box-title   { color:#b7791f; }
+.info-box-mistake .info-box-title { color:var(--danger); }
+.next-wrap { margin-top:16px; text-align:right; display:none; }
+.next-wrap.show { display:block; }
+.score-circle { width:120px; height:120px; border-radius:50%;
+  background:conic-gradient(var(--primary) var(--pct),var(--border) var(--pct));
+  display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+.score-inner { width:90px; height:90px; border-radius:50%; background:#fff;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.score-num  { font-size:1.6rem; font-weight:800; color:var(--primary); }
+.score-denom{ font-size:.75rem; color:var(--sub); }
+.result-msg { text-align:center; font-size:1.05rem; font-weight:700; margin-bottom:20px; }
+.stat-row { display:flex; gap:10px; margin-bottom:16px; }
+.stat-box { flex:1; text-align:center; padding:12px; border-radius:10px; background:#f4f6fb; }
+.stat-box .num { font-size:1.4rem; font-weight:800; }
+.stat-box .lbl { font-size:.75rem; color:var(--sub); }
+.history-list { list-style:none; }
+.history-list li { display:flex; align-items:center; gap:8px; padding:8px 10px;
+  border-radius:8px; margin-bottom:6px; background:#fafafa; font-size:.85rem; }
+.dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.dot.ok { background:var(--success); } .dot.ng { background:var(--danger); }
+.record-item { display:flex; justify-content:space-between; align-items:center;
+  padding:10px; border-radius:8px; border:1px solid var(--border); margin-bottom:8px; font-size:.85rem; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-icon">統</div>
+    <div><h1>統計検定2級</h1><div style="font-size:.75rem;color:var(--sub);">ドリルアプリ</div></div>
+  </div>
+  <button class="btn btn-outline" id="btn-history" style="font-size:.8rem;padding:8px 12px">履歴</button>
+</header>
+
+<div id="screen-home" class="screen active">
+  <div class="card"><h2>📚 単元を選ぶ</h2><div class="unit-grid" id="unit-grid"></div></div>
+  <div class="card"><h2>🎯 難易度を選ぶ</h2>
+    <div class="diff-row">
+      <div class="diff-chip selected" data-diff="all">全て</div>
+      <div class="diff-chip" data-diff="basic">基礎</div>
+      <div class="diff-chip" data-diff="standard">標準</div>
+      <div class="diff-chip" data-diff="advanced">応用</div>
+    </div>
+  </div>
+  <div class="card"><h2>🔢 出題数</h2>
+    <div class="count-row">
+      <div class="count-btn selected" data-count="10">10問</div>
+      <div class="count-btn" data-count="20">20問</div>
+      <div class="count-btn" data-count="all">全問</div>
+    </div>
+    <div style="font-size:.8rem;color:var(--sub)" id="available-count"></div>
+  </div>
+  <button class="btn btn-primary btn-block" id="btn-start">▶ ドリル開始</button>
+  <button class="btn btn-outline btn-block" id="btn-review" style="display:none">🔁 間違えた問題を復習</button>
+</div>
+
+<div id="screen-quiz" class="screen">
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span id="q-index">1 / 10</span>
+      <span id="q-score-live" style="font-weight:700;color:var(--primary)"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+  <div class="card">
+    <div><span class="unit-badge" id="q-unit"></span><span class="diff-badge" id="q-diff-badge"></span></div>
+    <div class="question-text" id="q-text"></div>
+    <div class="choices" id="q-choices"></div>
+    <div class="explanation" id="q-explanation"></div>
+    <div class="info-box info-box-point" id="q-point" style="display:none">
+      <div class="info-box-title">💡 この問題のポイント</div>
+      <div id="q-point-text"></div>
+    </div>
+    <div class="info-box info-box-mistake" id="q-mistake" style="display:none">
+      <div class="info-box-title">⚠️ 間違えやすいポイント</div>
+      <div id="q-mistake-text"></div>
+    </div>
+  </div>
+  <div class="next-wrap" id="next-wrap">
+    <button class="btn btn-primary" id="btn-next">次の問題 →</button>
+  </div>
+</div>
+
+<div id="screen-result" class="screen">
+  <div class="card" style="text-align:center">
+    <h2 style="margin-bottom:16px">📊 結果</h2>
+    <div class="score-circle" id="score-circle"><div class="score-inner">
+      <div class="score-num" id="score-num">0</div>
+      <div class="score-denom" id="score-denom">/ 0 問</div>
+    </div></div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="num" id="stat-correct" style="color:var(--success)">0</div><div class="lbl">正解</div></div>
+      <div class="stat-box"><div class="num" id="stat-wrong"   style="color:var(--danger)">0</div><div class="lbl">不正解</div></div>
+      <div class="stat-box"><div class="num" id="stat-pct">0%</div><div class="lbl">正答率</div></div>
+    </div>
+  </div>
+  <div class="card"><h2>問題別結果</h2><ul class="history-list" id="result-list"></ul></div>
+  <button class="btn btn-primary btn-block" id="btn-retry">🔄 もう一度（同じ設定）</button>
+  <button class="btn btn-outline btn-block" id="btn-home">🏠 ホームへ戻る</button>
+  <button class="btn btn-danger btn-block" id="btn-review-result" style="display:none">❌ 間違えた問題を復習</button>
+</div>
+
+<div id="screen-history" class="screen">
+  <div class="card"><h2>📈 過去の成績</h2><div id="history-content"></div></div>
+  <button class="btn btn-outline btn-block" id="btn-history-back">← 戻る</button>
+  <button class="btn btn-danger btn-block" id="btn-clear-history" style="font-size:.85rem">履歴をリセット</button>
+</div>
+
+<script>
+const ALL_QUESTIONS = [{"id": "adv001", "unit": "記述統計", "question": "データ x₁, x₂, …, xₙ に対して、各データに定数 c を加えたデータ (x₁+c, x₂+c, …, xₙ+c) の分散は元のデータの分散と比べてどうなるか。", "choices": ["分散は c² 倍になる", "分散は c 倍になる", "分散は変わらない", "分散は c 分だけ増加する"], "answer": 2, "explanation": "【正解】分散は変わらない\n\n■ 定数の加算と分散\n分散は「各データと平均の差の二乗の平均」です。\n全データに c を加えると、平均も c だけ増えます。\n\n新データ：xᵢ + c\n新平均：x̄ + c\n新しい偏差：(xᵢ + c) − (x̄ + c) = xᵢ − x̄\n\n偏差は元と変わらないため、分散も変わりません。\nV[X + c] = V[X]\n\n■ 定数の乗算との違い（重要！）\n全データを a 倍した場合：V[aX] = a²V[X]\n→ 分散は a² 倍になります。\n\n■ 合わせて覚える公式（線形変換）\nE[aX + b] = aE[X] + b\nV[aX + b] = a²V[X]\n\n■ 実用例\n気温を摂氏→華氏に変換（F = 9/5 × C + 32）した場合、標準偏差は 9/5 倍になりますが、形（ばらつきの比）は変わりません。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.3節「分布の特徴を表す指標」（線形変換と分散）\n　▶ 第2章 2.5節「期待値と分散」（線形変換の性質）", "difficulty": "advanced", "type": "property", "key_concept": "定数を加えても分散は不変（V[X+c]=V[X]）。乗算はV[aX]=a²V[X]で変化する", "common_mistake": "定数を足すと分散も変化すると誤解する。「ばらつき」は全データを同じ量動かしても変わらない直感を持つことが大切。"}, {"id": "adv002", "unit": "確率・条件付き確率", "question": "独立な確率変数 X, Y について、V[X + Y] = V[X] + V[Y] が成り立つ。では V[X − Y] はどれか。", "choices": ["V[X] − V[Y]", "V[X] + V[Y]", "(V[X] − V[Y])²", "|V[X] − V[Y]|"], "answer": 1, "explanation": "【正解】V[X] + V[Y]\n\n■ 分散の加法性（独立な場合）\nX と Y が独立なとき：\n　V[X + Y] = V[X] + V[Y]\n　V[X − Y] = V[X] + V[Y]　← これが正解\n\n■ なぜ引き算でも足し算になるの？\nV[X − Y] = V[X + (−Y)] = V[X] + V[−Y] = V[X] + (−1)²V[Y] = V[X] + V[Y]\n\n「−1 倍した変数の分散」は (−1)² = 1 倍なので、マイナスが消えます。\n分散は「ばらつき」なので、向きを逆にしてもばらつきは同じです。\n\n■ 直感的な例\n2人の選手の得点差 X − Y のばらつきを考えます。XもYも大きくばらつくなら、その差もばらつきます。「差」を取ることでばらつきが減るわけではありません。\n\n■ 相関がある場合は？\nX と Y が独立でない（相関あり）場合：\nV[X ± Y] = V[X] + V[Y] ± 2Cov(X, Y)\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章 2.5節「期待値と分散」\n　▶ 第2章 2.9節「2変数の確率分布」（共分散と分散の加法性）", "difficulty": "advanced", "type": "property", "key_concept": "独立な確率変数の差の分散 V[X-Y]=V[X]+V[Y]（分散は常に足し算）", "common_mistake": "V[X-Y]=V[X]-V[Y] と誤答する。分散は非負のため引き算にはならない。「-1倍」しても二乗で正になる。"}, {"id": "adv003", "unit": "推定", "question": "中心極限定理について正しいものはどれか。", "choices": ["母集団が正規分布のときのみ成立する", "標本サイズ n が大きいとき、母集団の分布に関わらず標本平均の分布は正規分布に近づく", "標本サイズが n=5 あれば十分に正規分布に近似できる", "中心極限定理は標本分散には適用されない"], "answer": 1, "explanation": "【正解】n が大きいとき、母集団の分布によらず標本平均は正規分布に近づく\n\n■ 中心極限定理（Central Limit Theorem）の内容\n母平均 μ、母分散 σ² をもつ任意の分布から大きさ n の無作為標本を取るとき、n が十分大きければ\n\nX̄ ≈ N(μ, σ²/n)\n\nが成立します。これは母集団の分布の形に関わりません。\n\n■ 各選択肢の確認\n① 「正規分布のときのみ」→ ❌ 任意の分布でよい\n③ 「n=5 で十分」→ ❌ 母集団が対称で正規に近ければ n=30 程度、歪んでいれば n=100 以上が目安\n④ 「分散には適用されない」→ 分散の標本分布はχ²分布に従うので厳密には異なるが、n が大きければ分散も正規に近似される\n\n■ なぜ重要か？\nこの定理があるから、母集団の分布を知らなくても、大きな標本であれば正規分布を使った推測が正当化されます。統計的推測の理論的基盤です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章 2.11節「大数の法則と中心極限定理」", "difficulty": "advanced", "type": "property", "key_concept": "中心極限定理：母集団の分布によらず、n が大きければ標本平均は正規分布に近づく", "common_mistake": "「母集団が正規分布でないと使えない」と誤解する。この定理の強みは母集団の形を問わないことにある。"}, {"id": "adv004", "unit": "検定の応用", "question": "複数のグループ間の平均を同時に比較したいとき、t検定を繰り返し行う代わりに分散分析（ANOVA）を使う主な理由はどれか。", "choices": ["分散分析の方が計算が簡単だから", "t検定を繰り返すと第一種過誤の累積確率が増大するから", "分散分析は外れ値に強いから", "t検定は3グループ以上に対応していないから"], "answer": 1, "explanation": "【正解】t検定を繰り返すと第一種過誤の累積確率が増大するから\n\n■ 多重比較の問題（ファミリーワイズエラー率）\n3グループ A, B, C を全ペアで比較すると 3回の検定が必要です。\n各検定で α=0.05 とすると、少なくとも1回以上誤って棄却する確率は：\n\n1 − (1−0.05)³ = 1 − 0.857 ≈ 0.143 = 約14%！\n\n本来5%に抑えたい第一種過誤が14%に膨らんでしまいます。\n\n■ 分散分析（ANOVA）の解決策\n「全グループの平均が等しいか」を1回の検定で判断します。\n帰無仮説：μ₁ = μ₂ = … = μₖ\n検定統計量：F = グループ間分散 / グループ内分散\n\n■ 多重比較法\nANOVA で有意差が出た後、どのグループ間に差があるかを多重比較法（Tukey法、Bonferroni法など）で調べます。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章 5.2節「分散分析モデル」\n　▶ 付録 7.4節「多重比較」", "difficulty": "advanced", "type": "application", "key_concept": "t検定の繰り返しは第一種過誤を累積させる。ANOVAは全グループを同時に1回で検定する", "common_mistake": "「3グループでもt検定を3回使えばよい」と思い込む。繰り返し検定は有意水準の保証を崩す。"}, {"id": "adv005", "unit": "回帰・相関", "question": "重回帰分析で説明変数を追加し続けると自由度調整済み R²（adjusted R²）が下がることがある。その主な理由はどれか。", "choices": ["変数を増やすとモデルが不安定になるから", "追加した変数の寄与が、失う自由度のコストを下回るから", "変数が多いと計算誤差が増えるから", "説明変数は3個を超えてはいけないルールがあるから"], "answer": 1, "explanation": "【正解】追加した変数の寄与が、失う自由度のコストを下回るから\n\n■ 通常の R² の問題点\n通常の R² は変数を追加するだけで必ず上がります（たとえ意味のない変数でも）。\n→ モデルの本当の良さを測れません。\n\n■ 自由度調整済み R² の式\nAdj.R² = 1 − (1−R²) × (n−1) / (n−k−1)\n　n：標本サイズ、k：説明変数の数\n\n変数を1つ追加すると k が増え、自由度 (n−k−1) が減ります。\n追加した変数が R² をほとんど上げない場合、自由度の減少ペナルティが勝り、Adj.R² が下がります。\n\n■ 変数選択への応用\n・Adj.R² が上がる → 追加する変数は有用\n・Adj.R² が下がる → その変数は不要かもしれない\n\nAIC（赤池情報量規準）やBICも同様の考え方で変数の多さにペナルティを課します。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章 5.1節「線形回帰モデル」（決定係数・自由度調整済みR²）", "difficulty": "advanced", "type": "property", "key_concept": "Adj.R²は自由度を考慮した決定係数。不要な変数追加にペナルティがかかる", "common_mistake": "変数を増やすと必ずモデルが良くなると誤解する。過学習（変数が多すぎる）と自由度調整済みR²の低下は表裏一体。"}, {"id": "adv006", "unit": "仮説検定", "question": "統計的有意性（p < 0.05）と実務的有意性（効果量）の関係について正しいものはどれか。", "choices": ["p < 0.05 であれば常に実務的にも重要な差がある", "n が非常に大きい場合、実務的に無意味な小さな差でも p < 0.05 になりうる", "p値が小さいほど効果量も大きい", "実務的な重要性は p値のみで判断できる"], "answer": 1, "explanation": "【正解】n が非常に大きい場合、実務的に無意味な小さな差でも p < 0.05 になりうる\n\n■ 統計的有意性 vs 実務的重要性\n\n検定統計量（例：Z）= 効果量 × √n\n\nn が巨大になると、どんなに小さな差でも統計的に有意になります。\n\n例）薬の効果\n　・A薬：平均血圧 140.01 mmHg\n　・B薬：平均血圧 140.00 mmHg\n　→ n=1,000,000 なら p < 0.001 になるかもしれないが、差は 0.01 mmHg。臨床的には無意味。\n\n■ 効果量（Effect Size）の指標\n・Cohen's d = (μ₁ − μ₂) / σ（平均差の標準化）\n　d=0.2：小、d=0.5：中、d=0.8：大（Cohen の目安）\n・相関係数 r や R² も効果量の1種\n\n■ 結論\np値：「差がある」という証拠の強さ\n効果量：「差がどのくらい大きいか」の大きさ\n両方を報告することが現代の統計では推奨されています。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章 4.1節「仮説検定の考え方」（p値の解釈・限界）", "difficulty": "advanced", "type": "application", "key_concept": "p値は効果の大きさを示さない。大標本では実務的に無意味な差でも有意になりうる", "common_mistake": "「p<0.05＝重要な差」と短絡する。n が大きい研究では必ず効果量（Cohen's d など）も確認する習慣を持つ。"}, {"id": "adv007", "unit": "確率分布", "question": "指数分布 Exp(λ) の「無記憶性（memoryless property）」の説明として正しいものはどれか。", "choices": ["期待値と分散が等しい", "時刻 t まで事象が起きなかったという条件のもとで、さらに s 時間後まで起きない確率は、最初から s 時間後まで起きない確率と同じ", "ポアソン分布と同じ形をしている", "すべての時点で一様な確率密度を持つ"], "answer": 1, "explanation": "【正解】時刻 t まで事象が起きなかった条件のもとで、さらに s 時間後まで起きない確率は最初から考えた場合と同じ\n\n■ 無記憶性（Memoryless Property）\nP(X > s + t | X > t) = P(X > s)\n\n「過去に何も起きなかった」という情報が、将来の確率に影響しません。\n\n■ 直感的な例\n「壊れるまでの時間」が指数分布に従う機械を考えます。\n10年間壊れなかった機械でも、「次の1年以内に壊れる確率」は新品の機械と同じです。\n→ 機械は「疲労しない（老化しない）」と仮定していることと同等。\n\n■ 無記憶性を持つのは指数分布のみ（連続型の場合）\n実際の機械は疲労・老化するので厳密には当てはまりませんが、故障率が時間によらず一定と仮定するときに指数分布を使います。\n\n■ ポアソン分布との関係\n単位時間に λ 回起きる事象（ポアソン過程）の「次の事象までの待ち時間」は Exp(λ) に従います。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章 2.8節「主な連続型確率分布」（指数分布・無記憶性）", "difficulty": "advanced", "type": "property", "key_concept": "指数分布の無記憶性：P(X>s+t|X>t)=P(X>s)。過去の経過は将来の確率に影響しない", "common_mistake": "無記憶性を「期待値=分散（ポアソン分布の性質）」と混同する。無記憶性は指数分布固有の性質。"}, {"id": "adv008", "unit": "推定", "question": "最尤推定（MLE: Maximum Likelihood Estimation）の考え方として正しいものはどれか。", "choices": ["事後確率が最大になるパラメータを求める方法", "観測データが得られる確率（尤度）を最大にするパラメータを推定する方法", "残差の二乗和を最小にする方法", "推定量の分散が最小になるように推定する方法"], "answer": 1, "explanation": "【正解】観測データが得られる確率（尤度）を最大にするパラメータを推定する方法\n\n■ 最尤推定の考え方\n「このデータが観測される可能性を最大にするパラメータ θ は何か？」を求めます。\n\n尤度関数：L(θ) = P(データ | θ) = Πᵢ f(xᵢ; θ)\n最大にする θ̂ が最尤推定量。\n\n■ 計算の実例（コイン投げ）\n10回中7回表が出たとき、p（表の確率）の最尤推定量は：\nL(p) = C(10,7) × p⁷ × (1-p)³ を最大にする p\n→ dL/dp = 0 を解くと p̂ = 7/10 = 0.7\n\n■ 各選択肢との比較\n① 事後確率最大 → MAP推定（ベイズ的アプローチ）\n③ 残差二乗和最小 → 最小二乗法\n④ 分散最小 → 有効推定量（UMVUE）\n\n■ 最尤推定の性質\n・一致性：n→∞ で真の値に収束\n・漸近正規性：大標本で正規分布に近づく\n・正規分布モデルでは最小二乗推定と一致\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第3章 3.3節「点推定と区間推定」（最尤推定・点推定の方法）", "difficulty": "advanced", "type": "definition", "key_concept": "最尤推定は尤度L(θ)=P(データ|θ)を最大にするθを推定値とする方法", "common_mistake": "最尤推定とMAP推定（事後確率最大化）を混同する。MAPは事前分布を加味したベイズ的手法であり、MLEは事前情報なし。"}, {"id": "adv009", "unit": "検定の応用", "question": "ノンパラメトリック検定を使うべき状況として最も適切なものはどれか。", "choices": ["標本サイズが非常に大きい場合", "データが正規分布から大きく外れている、または標本サイズが小さい場合", "2グループを比較するすべての場合", "母分散が既知の場合"], "answer": 1, "explanation": "【正解】データが正規分布から大きく外れている、または標本サイズが小さい場合\n\n■ パラメトリック検定の前提\nt検定・F検定などは「データが正規分布に従う」という仮定（または中心極限定理による正規近似）に基づきます。\n\n■ ノンパラメトリック検定が有効な場合\n① 正規性が仮定できない（強い歪み、外れ値など）\n② 標本サイズが小さく（n < 15 程度）、正規近似が危険な場合\n③ 順序尺度データ（1位・2位・3位など）\n\n■ 代表的なノンパラメトリック検定\n| 場面 | パラメトリック | ノンパラメトリック |\n|---|---|---|\n| 1群の平均 | 1標本t検定 | Wilcoxon符号順位検定 |\n| 2群独立 | 2標本t検定 | Mann-Whitney U検定 |\n| 対応あり | 対応t検定 | Wilcoxon符号付順位検定 |\n| 3群以上 | 一元分散分析 | Kruskal-Wallis検定 |\n\n■ デメリット\n正規性が成立するときは、ノンパラよりパラメトリック検定の方が検出力が高くなります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章 4.1節「仮説検定の考え方」（検定の選択）\n　▶ 第6章 6.1節「正規性の検討」", "difficulty": "advanced", "type": "application", "key_concept": "ノンパラメトリック検定は正規性の仮定が成立しない場合や小標本で有効", "common_mistake": "「ノンパラメトリック検定はいつでも使えて安全」と思い込む。正規性が成立する場合はパラメトリックの方が検出力が高い。"}, {"id": "adv010", "unit": "回帰・相関", "question": "回帰分析において「多重共線性（マルチコリネアリティ）」が問題となる状況の説明として正しいものはどれか。", "choices": ["残差が正規分布に従わない状況", "2つ以上の説明変数が互いに強く相関している状況", "目的変数と説明変数の相関が低い状況", "標本サイズが説明変数より少ない状況のみ"], "answer": 1, "explanation": "【正解】2つ以上の説明変数が互いに強く相関している状況\n\n■ 多重共線性とは？\n重回帰分析で、説明変数 X₁ と X₂ が強く相関している（ほぼ同じ情報を持つ）とき起きる問題です。\n\n■ 何が問題になるか？\n① 回帰係数の推定が不安定になる（標準誤差が大きくなる）\n② 係数の符号が理論と逆になることがある\n③ 変数の個別の影響が分離できなくなる\n\n■ 検出方法\n・VIF（分散拡大要因）= 1/(1−Rⱼ²)\n　VIF > 10 が多重共線性の目安\n・相関行列で説明変数間の相関を確認\n\n■ 対処法\n① 相関の高い変数のどちらかを除く\n② 主成分分析で情報を統合する\n③ リッジ回帰など正則化手法を使う\n\n■ 例\n「身長（cm）」と「身長（m）」を同時に説明変数に入れると完全な多重共線性が起きます（r=1）。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章 5.1節「線形回帰モデル」（重回帰・変数選択）", "difficulty": "advanced", "type": "definition", "key_concept": "多重共線性：説明変数間の強い相関により回帰係数の推定が不安定になる問題", "common_mistake": "多重共線性を「目的変数と説明変数の相関が低い」と誤解する。問題は説明変数「同士」の相関にある。"}, {"id": "ch001", "unit": "記述統計", "question": "次のヒストグラムの特徴について説明した文として正しいものはどれか。\n\n【度数分布】\n 10〜20点：2人\n 20〜30点：5人\n 30〜40点：12人\n 40〜50点：8人\n 50〜60点：3人", "choices": ["分布は左に歪んでいる（負の歪度）", "分布はほぼ対称に見える", "最頻値の階級は 20〜30点 である", "分布は右に歪んでいる（正の歪度）"], "answer": 1, "explanation": "【正解】分布はほぼ対称に見える\n\n■ 度数の確認\n10〜20：2, 20〜30：5, 30〜40：12, 40〜50：8, 50〜60：3\n合計：30人\n\n■ 形状の確認\n山の頂点は 30〜40点（度数12）で中央付近にあります。\n左側（10〜30）：7人、右側（40〜60）：11人\n若干右側が重いですが、ほぼ中央で山を形成しています。\n\n■ 各選択肢の確認\n①左歪み：左に長い尾がある場合。このデータは左側の尾が短い。\n③最頻値は度数が最大の階級 30〜40点。20〜30点ではない。\n④右歪み：右に長い尾がある場合。このデータの尾は両側とも短い。\n\n■ 歪みの読み取り方\nヒストグラムで「尾がどちらに伸びているか」を見ます。\n左右がほぼ均等に山から落ちていれば対称（ほぼ正規分布的）です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.2節「量的データの分布」（度数分布表・ヒストグラム）\n　▶ 第1章 1.3節「分布の特徴を表す指標」（歪度）", "difficulty": "standard", "type": "chart", "key_concept": "ヒストグラムの歪みは「尾がどちらに長く伸びるか」で判断する", "common_mistake": "山の位置だけ見て「左寄り＝左歪み」と誤判断する。歪みは尾の方向で判断する（左に尾が伸びる＝左歪み）。"}, {"id": "ch002", "unit": "記述統計", "question": "次の箱ひげ図から読み取れることとして正しいものはどれか。\n\n最小値：10、Q1：25、中央値：40、Q3：60、最大値：90\n（ひげの外側に外れ値：110 が1点ある）", "choices": ["平均値は40である", "データの50%は25以上60以下の範囲にある", "IQR（四分位範囲）は50である", "データの25%は10以上25未満の範囲にある"], "answer": 1, "explanation": "【正解】データの50%は25以上60以下の範囲にある\n\n■ 箱ひげ図の読み方\n・最小値（ひげの左端）：10\n・Q1（箱の左端）：25\n・中央値（箱の中の線）：40\n・Q3（箱の右端）：60\n・最大値（ひげの右端）：90\n・外れ値（点で表示）：110\n\n■ 各選択肢の確認\n①「平均値は40」→ ❌\n　箱ひげ図から読めるのは中央値（40）であり、平均値ではありません。外れ値110があるため平均は40より大きいはずです。\n\n②「50%は Q1〜Q3 の範囲」→ ✅\n　箱の中（Q1〜Q3）に全データの中央50%が含まれます。\n\n③「IQR = 50」→ ❌\n　IQR = Q3 − Q1 = 60 − 25 = 35\n\n④「25%は最小値〜Q1」→ ❌ の表現が不正確\n　Q1以下（最小値〜Q1）に下位約25%が含まれますが、「10以上25未満」は外れ値がないとき。外れ値の扱いに注意。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.4節「量的データの要約とグラフ表現」（箱ひげ図）", "difficulty": "standard", "type": "chart", "key_concept": "箱ひげ図の「箱」はQ1〜Q3の範囲でデータの中央50%を表す。中央値≠平均値に注意", "common_mistake": "箱ひげ図の中央線を平均値と勘違いする。中央線は中央値（メジアン）であり、平均値は箱ひげ図から直接読めない。"}, {"id": "ch003", "unit": "回帰・相関", "question": "散布図を見たとき、次のうち相関係数 r が最も -1 に近いと判断されるものはどれか。", "choices": ["点が右上がりの直線状に密集している", "点が右下がりの直線状に密集している", "点が円形状に広がっている", "点が U 字形に並んでいる"], "answer": 1, "explanation": "【正解】点が右下がりの直線状に密集している\n\n■ 散布図と相関係数の対応\n・右上がりに密集（/）→ r が+1に近い（強い正の相関）\n・右下がりに密集（\\）→ r が-1に近い（強い負の相関）\n・円形状に広がる（○）→ r ≈ 0（無相関）\n・U字形 → r ≈ 0（線形相関なし！）\n\n■ U字形の罠\nU字形でも相関係数 r ≈ 0 になることがあります。\nピアソンの相関係数は「線形の関係」しか測れないためです。\n非線形の関係があっても r が低くなるため注意が必要です。\n\n■ 相関係数の値と散布図の関係（目安）\n|r| ≥ 0.9：ほぼ一直線\n|r| ≈ 0.7：やや直線状\n|r| ≈ 0.4：弱い傾向がある程度\n|r| ≈ 0：ばらばら（または U字・逆U字）\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.6節「2変数データの記述と要約」（散布図・相関係数）", "difficulty": "basic", "type": "chart", "key_concept": "r=-1に近い＝右下がりの直線状。相関係数は線形関係の強さのみ測定する", "common_mistake": "U字形に r が高い値を当てはめる。相関係数は曲線的な関係を検出できないため、散布図の確認が不可欠。"}, {"id": "ch004", "unit": "推定", "question": "次のデータを正規確率プロット（QQプロット）したとき、正規分布に従うと判断できるのはどれか。", "choices": ["プロットが S 字カーブを描いている", "プロットがほぼ直線状に並んでいる", "プロットが中央で大きく膨らんでいる", "プロットが右端で急激に上昇している"], "answer": 1, "explanation": "【正解】プロットがほぼ直線状に並んでいる\n\n■ QQプロット（正規確率プロット）とは？\n横軸：正規分布から期待される値（理論的分位数）\n縦軸：実際のデータの値（標本分位数）\n\nデータが正規分布に従うとき、これらがほぼ一致するため「直線状」になります。\n\n■ 形状による判断\n・直線状 → 正規分布とほぼ一致\n・S字カーブ → 分布の尾が正規より軽い（過小分散）\n・両端が外れる → 外れ値が存在\n・右上が急上昇 → 右に長い裾（右歪み）\n\n■ ヒストグラムと QQプロットの使い分け\n・ヒストグラム：分布の形状を直感的に把握\n・QQプロット：正規性を定量的・精密に確認\n\nどちらも補完的に使うのが実務的なアプローチです。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第6章 6.1節「正規性の検討」（QQプロット・正規性の確認）", "difficulty": "standard", "type": "chart", "key_concept": "QQプロットが直線状≒正規分布。S字や両端の外れはそれぞれ分布の特徴を示す", "common_mistake": "ヒストグラムで「釣り鐘形に見える」だけで正規性と判断してしまう。QQプロットで確認するとより精密な評価ができる。"}, {"id": "ch005", "unit": "記述統計", "question": "次の幹葉図（ステムアンドリーフ）から読み取れる中央値はどれか。\n\n【幹葉図】\n 1 | 2 5 8\n 2 | 0 3 3 7\n 3 | 1 4\n（幹は十の位、葉は一の位）", "choices": ["20", "23", "25", "27"], "answer": 1, "explanation": "【正解】23\n\n■ 幹葉図の読み方\n幹（十の位）と葉（一の位）を組み合わせてデータを読みます。\n\nデータ一覧：12, 15, 18, 20, 23, 23, 27, 31, 34\n→ 昇順に並んでいます（幹葉図は自動的に並ぶ）\n\n■ 中央値の計算\nデータ数：9個（奇数）\n中央値の位置：(9+1)/2 = 5番目\n\n1番目：12\n2番目：15\n3番目：18\n4番目：20\n5番目：23 ← 中央値\n6番目：23\n7番目：27\n8番目：31\n9番目：34\n\n■ 幹葉図のメリット\n・データを可視化しながら元の値も保持できる\n・2グループを背中合わせに並べて比較もできる（背中合わせ幹葉図）\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.4節「量的データの要約とグラフ表現」（幹葉図）", "difficulty": "basic", "type": "chart", "key_concept": "幹葉図は昇順に並んでいるため、中央の位置のデータをそのまま読めば中央値が求まる", "common_mistake": "幹葉図を正しく読まずに幹の値だけ使ってしまう（例：幹2の列の中央を中央値と誤答）。必ず幹+葉でデータを再構成する。"}, {"id": "r001", "unit": "回帰・相関", "question": "相関係数 r の値の範囲として正しいものはどれか。", "choices": ["0 ≤ r ≤ 1", "−1 ≤ r ≤ 1", "−∞ < r < ∞", "0 ≤ r < ∞"], "answer": 1, "explanation": "【正解】−1 ≤ r ≤ 1\n\n■ 相関係数（ピアソンの積率相関係数）\nr = Σ(xᵢ−x̄)(yᵢ−ȳ) / (n×sₓ×sᵧ)\n\n■ 値の解釈\n・r = +1：完全な正の線形相関（一方が増えると他方も必ず増える）\n・r = −1：完全な負の線形相関（一方が増えると他方は必ず減る）\n・r = 0：線形相関なし（無相関）\n\n■ 目安（絶対値で判断）\n　|r| ≥ 0.7：強い相関\n　0.4 ≤ |r| < 0.7：中程度の相関\n　|r| < 0.4：弱い相関\n（ただし分野によって基準は異なります）\n\n■ 重要な注意点\n相関係数は「線形の関係」のみを測ります。曲線的な関係（例：U字型）があっても r ≈ 0 になることがあります。また「相関がある ≠ 因果関係がある」です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章「データの記述と要約」\n　▶ 1.6節「2変数データの記述と要約」（相関係数の定義・解釈）", "difficulty": "basic", "type": "definition", "key_concept": "相関係数は −1 以上 +1 以下の値をとり、符号が方向、絶対値が強さを表す", "common_mistake": "「0以上1以下」と誤解し、負の相関（一方が増えると他方が減る関係）の存在を忘れる。"}, {"id": "r002", "unit": "回帰・相関", "question": "単回帰分析において、目的変数 Y を説明変数 X で回帰する式 Ŷ = a + bX の係数 b（回帰係数）を最小二乗法で推定する。b の推定式として正しいものはどれか。", "choices": ["b = Σ(xᵢ−x̄)² / Σ(xᵢ−x̄)(yᵢ−ȳ)", "b = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)²", "b = ȳ / x̄", "b = Σxᵢyᵢ / Σxᵢ²"], "answer": 1, "explanation": "【正解】b = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)²\n\n■ 最小二乗法\n残差（観測値 − 予測値）の二乗和 Σ(yᵢ − Ŷᵢ)² を最小にするように回帰係数を求める方法です。\n\n■ 回帰係数 b の式\nb = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)² = Sxy / Sxx\n\n・分子 Sxy：X と Y の共分散（の分子）→ XとYの共変動\n・分母 Sxx：X の分散（の分子）→ Xのばらつき\n\n■ 切片 a の式\na = ȳ − b × x̄\n→ 回帰直線は必ず点（x̄, ȳ）を通ります\n\n■ 相関係数との関係\nb = r × (sᵧ / sₓ)\n相関係数 r が同じでも、X・Yの標準偏差の比が違えば傾きも変わります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章「線形モデル分析」\n　▶ 5.1節「線形回帰モデル」（最小二乗推定量の導出）", "difficulty": "standard", "type": "calculation", "key_concept": "最小二乗法の回帰係数 b=Sxy/Sxx = Σ(xᵢ-x̄)(yᵢ-ȳ)/Σ(xᵢ-x̄)²", "common_mistake": "分子と分母を逆にして b=Sxx/Sxy と誤計算する。分子は「共変動（XとY両方の偏差の積）」、分母は「Xのばらつき」。"}, {"id": "r003", "unit": "回帰・相関", "question": "単回帰分析の決定係数 R² の説明として正しいものはどれか。", "choices": ["回帰直線の傾きを表す", "目的変数の変動のうち、説明変数で説明できる割合", "残差の標準偏差", "回帰係数の検定統計量"], "answer": 1, "explanation": "【正解】目的変数の変動のうち、説明変数で説明できる割合\n\n■ 決定係数 R²\nR² = 1 − (残差平方和) / (全平方和) = SSR / SST\n\n・SST（全平方和）= Σ(yᵢ − ȳ)²　→ Y 全体のばらつき\n・SSE（残差平方和）= Σ(yᵢ − Ŷᵢ)²　→ 回帰で説明できなかった部分\n・SSR（回帰平方和）= SST − SSE　→ 回帰で説明できた部分\n\n■ 値の範囲と解釈\n0 ≤ R² ≤ 1\n・R² = 1：全てのデータが回帰直線上に乗る（完全に説明できる）\n・R² = 0：説明変数は Y の変動を全く説明できない\n・R² = 0.8：Y の変動の80%を X で説明できる\n\n■ 単回帰の場合\nR² = r²（相関係数の二乗）\n\n■ 注意\nR² は変数を追加するだけで必ず上がるため、多変数回帰では「自由度調整済みR²」を使います。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章「線形モデル分析」\n　▶ 5.1節「線形回帰モデル」（決定係数の定義と解釈）", "difficulty": "standard", "type": "definition", "key_concept": "決定係数 R² はYの変動のうち回帰で説明できる割合（0≤R²≤1）", "common_mistake": "「R²=0.8なら相関係数0.8」と誤解する（実際は r=√0.8≈0.89）。また「R²=0.8は精度が高い」という主観的な判断も文脈により異なる。"}, {"id": "r004", "unit": "回帰・相関", "question": "単回帰分析で Ŷ = 2 + 3X の回帰式が得られた。X = 5 のときの予測値 Ŷ はどれか。", "choices": ["13", "17", "25", "10"], "answer": 1, "explanation": "【正解】17\n\n■ 計算\nŶ = 2 + 3 × 5 = 2 + 15 = 17\n\n■ 回帰式の読み方\nŶ = a + bX\n・a（切片）= 2：X=0 のときの Y の予測値\n・b（回帰係数）= 3：X が 1 増えると Y は 3 増える\n\n■ 予測値と残差\n実際の観測値 y と予測値 Ŷ の差を残差（residual）といいます。\n残差 e = y − Ŷ\n\n最小二乗法では Σeᵢ² を最小にするよう係数を決めます。\n残差の合計 Σeᵢ = 0 になることが保証されています。\n\n■ 外挿に注意\n観測データの範囲を大きく外れた X の値（外挿）に対して予測すると、精度が大きく下がることがあります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章「線形モデル分析」\n　▶ 5.1節「線形回帰モデル」（回帰直線の利用）", "difficulty": "basic", "type": "calculation", "key_concept": "回帰式 Ŷ=a+bX への X の値の代入による予測値の計算", "common_mistake": "切片 a と傾き b の役割を入れ替えて b+aX と計算してしまう。または乗算を忘れて a+b+X のように加算してしまう。"}, {"id": "r005", "unit": "回帰・相関", "question": "相関係数 r = 0.8 のとき、単回帰分析の決定係数 R² の値はどれか。", "choices": ["0.80", "0.64", "0.89", "0.40"], "answer": 1, "explanation": "【正解】0.64\n\n■ 単回帰における R² と r の関係\n単回帰（説明変数が1つ）の場合：R² = r²\n\n■ 計算\nR² = 0.8² = 0.64\n\n■ 解釈\n相関係数 r = 0.8 は「強い正の相関がある」と言えますが、決定係数 R² = 0.64 = 64% は「Y の変動の64%が X で説明できる」ことを意味します。残り36%は X 以外の要因によります。\n\n■ r と R² の使い分け\n・r（相関係数）：2変数の線形関係の強さと方向（+/−）を示す\n・R²（決定係数）：モデルの当てはまりの良さを示す（回帰分析で使う）\n\nr = 0.8 でも R² = 0.64 であり、「8割説明できる」という表現は不正確です。「64%説明できる」が正しい表現です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章「線形モデル分析」\n　▶ 5.1節「線形回帰モデル」（決定係数と相関係数の関係）\n　▶ 第1章 1.6節「2変数データの記述と要約」", "difficulty": "standard", "type": "calculation", "key_concept": "単回帰では決定係数 R²=r²（相関係数の二乗）", "common_mistake": "R²=r と誤解してR²=0.8と答える。0.8²=0.64なのでR²=0.64が正しい。「説明率は相関係数より低くなる」と覚えると良い。"}, {"id": "r006", "unit": "回帰・相関", "question": "回帰分析において残差の性質として正しいものはどれか。", "choices": ["残差の平均は必ず1になる", "残差の合計は0になる（切片を含む回帰の場合）", "残差は必ず正規分布に従う", "残差と予測値の相関係数は1になる"], "answer": 1, "explanation": "【正解】残差の合計は0になる（切片を含む回帰の場合）\n\n■ 残差の性質（最小二乗法）\n最小二乗法で推定した回帰係数には次の性質があります。\n\n① Σeᵢ = 0（残差の合計 = 0）\n② Σxᵢeᵢ = 0（説明変数と残差は無相関）\n③ 回帰直線は必ず (x̄, ȳ) を通る\n\n■ 残差のチェック（残差プロット）\n良いモデルでは残差は：\n・平均0、一定の分散で散らばる（等分散性）\n・説明変数との間にパターンがない（独立性）\n・正規分布に近い（正規性）※ただし保証されない\n\n■ 選択肢の確認\n・①平均0（合計0）が正しく、平均1ではない\n・③残差の正規性は「仮定」であり「保証」ではない（検定で確認）\n・④残差と予測値の相関は0（無相関）が前提\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章「線形モデル分析」\n　▶ 5.1節「線形回帰モデル」（残差の性質・モデル診断）", "difficulty": "standard", "type": "property", "key_concept": "最小二乗法では残差の合計Σeᵢ=0が保証される（切片を含む回帰の場合）", "common_mistake": "「残差は必ず正規分布に従う」と断言してしまう（これは仮定であり保証ではない）。残差プロットで確認が必要。"}, {"id": "r007", "unit": "回帰・相関", "question": "「相関関係があることは因果関係を意味しない」ことを示す例として最も適切なものはどれか。", "choices": ["身長と体重に正の相関がある", "気温とアイスクリームの売上に正の相関があり、気温とビールの売上にも正の相関があるが、アイスとビールにも相関が見られる", "勉強時間とテストの点数に正の相関がある", "運動量とBMIに負の相関がある"], "answer": 1, "explanation": "【正解】気温とアイスクリームの売上、気温とビールの売上に正の相関があり、アイスとビールにも相関が見られる\n\n■ 擬似相関（見せかけの相関）\n「アイスクリームの売上」と「ビールの売上」には正の相関がありますが、アイスがビールの原因ではありません。両者が「気温」という共通の原因変数（交絡変数・交絡因子）の影響を受けているためです。\n\n■ 相関と因果の違い\n相関関係：2変数が一緒に変動する統計的な関係\n因果関係：一方が原因で他方が結果という方向性のある関係\n\n■ 因果推論のために\n因果関係を示すには：\n① ランダム化比較試験（RCT）の実施\n② 他の変数（交絡変数）を統制した分析\n③ 時間的前後関係の確認\nなどが必要です。\n\n■ 他の選択肢\n①③④は因果関係の可能性が高い合理的な例であり、「相関 ≠ 因果」の例としては不適切です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.6節「2変数データの記述と要約」（相関と因果）\n　▶ 第3章 3.2節「統計的な研究の種類」（観察研究と実験研究）", "difficulty": "standard", "type": "application", "key_concept": "相関関係は因果関係を示さない。交絡変数（第三の変数）による擬似相関に注意する", "common_mistake": "相関係数が高いほど因果関係が強いと結論づける。アイスクリームと溺死者数のように、共通の原因（気温）による擬似相関は頻出。"}, {"id": "r008", "unit": "回帰・相関", "question": "回帰係数 b=3 の有意性を検定するとき、帰無仮説として正しいものはどれか。", "choices": ["H₀：b = 3", "H₀：b = 0", "H₀：R² = 0", "H₀：b ≠ 0"], "answer": 1, "explanation": "【正解】H₀：b = 0\n\n■ 回帰係数の検定\n「X は Y に本当に影響しているか？」を確認するのが回帰係数の有意性検定です。\n\n帰無仮説 H₀：β = 0（母回帰係数は0 → X は Y に影響しない）\n対立仮説 H₁：β ≠ 0（X は Y に影響する）\n\n■ なぜ「0と異なるか」を検定するの？\nb=0 は「X が変化しても Y は変化しない」を意味します。つまり「X は Y の予測に役立たない」状態です。b≠0 が示せれば「X は Y の説明に有用」といえます。\n\n■ 検定統計量\nt = b̂ / SE(b̂)　～　t(n−2)\n（SE(b̂) は回帰係数の標準誤差）\n\n■ 注意\nb̂=3 という推定値が得られても、サンプルサイズが小さいと標準誤差が大きく、有意にならないことがあります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章「線形モデル分析」\n　▶ 5.1節「線形回帰モデル」（回帰係数の検定）", "difficulty": "standard", "type": "definition", "key_concept": "回帰係数の有意性検定の帰無仮説は H₀:β=0（Xは Y に影響しない）", "common_mistake": "H₀を推定値と同じ値（例：H₀:b=3）に設定してしまう。帰無仮説は常に「効果なし（=0）」から出発するのが検定の原則。"}, {"id": "r009", "unit": "回帰・相関", "question": "X と Y のデータに基づいて X で Y を予測する回帰直線と、Y で X を予測する回帰直線の関係として正しいものはどれか。", "choices": ["常に同じ直線になる", "r = ±1 でない限り、一般に異なる直線になる", "傾きは同じで切片のみ異なる", "どちらの回帰直線も必ず原点を通る"], "answer": 1, "explanation": "【正解】r = ±1 でない限り、一般に異なる直線になる\n\n■ 2本の回帰直線\nY を X で予測：Ŷ = a₁ + b₁X （残差 = yᵢ − Ŷᵢ の二乗和を最小化）\nX を Y で予測：X̂ = a₂ + b₂Y （残差 = xᵢ − X̂ᵢ の二乗和を最小化）\n\nそれぞれ「最小化する方向（縦・横）」が違うため、一般に異なる直線になります。\n\n■ r = ±1 の場合\n全データが完全に一直線上に乗るため、2本の直線は一致します。\n\n■ 傾きの関係\nb₁（Y on X の傾き）= r × sᵧ/sₓ\nb₂（X on Y の傾き）= r × sₓ/sᵧ\nb₁ × b₂ = r²（決定係数）\n\n■ どちらを使うべきか\n「X が原因・Y が結果」という因果的な方向が明確であれば、目的変数（結果）を Y として回帰します。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章「線形モデル分析」\n　▶ 5.1節「線形回帰モデル」（回帰直線の性質）\n　▶ 第1章 1.6節（相関係数と回帰の関係）", "difficulty": "advanced", "type": "property", "key_concept": "r≠±1 のとき YonX の回帰直線と XonY の回帰直線は最小化する方向が異なるため一致しない", "common_mistake": "「どちらで回帰しても同じ直線が得られる」と思い込む。残差の向き（縦方向か横方向か）が違うため、r=±1 の完全相関時のみ一致する。"}, {"id": "r010", "unit": "回帰・相関", "question": "n 個のデータに対して単回帰分析を行うとき、残差平方和（誤差平方和）の自由度はどれか。", "choices": ["n", "n − 1", "n − 2", "n + 1"], "answer": 2, "explanation": "【正解】n − 2\n\n■ 単回帰の自由度の内訳\n全平方和の自由度：n − 1\n　= 回帰平方和の自由度（1）+ 残差平方和の自由度（n−2）\n\n■ なぜ n−2？\n単回帰では2つのパラメータ（切片 a と傾き b）を推定するため、2つの自由度を「消費」します。\n残差の自由度 = n − (推定するパラメータ数) = n − 2\n\n■ 自由度まとめ（単回帰）\n┌──────────────┬────┐\n│　変動要因　　　│自由度│\n├──────────────┼────┤\n│ 回帰　　　　　 │　1　 │\n│ 残差（誤差）　 │ n−2 │\n│ 全体　　　　　 │ n−1 │\n└──────────────┴────┘\n\n■ 分散分析表との関係\n平均二乗（MS）= 平方和 / 自由度\nF = 回帰のMS / 残差のMS　でモデル全体の有意性を検定します。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第5章「線形モデル分析」\n　▶ 5.1節「線形回帰モデル」（分散分析表・自由度）", "difficulty": "standard", "type": "calculation", "key_concept": "単回帰の残差自由度は n-2（切片と傾きの2パラメータを推定する分を引く）", "common_mistake": "1標本の推定との混同で自由度を n-1 と誤答する。パラメータを1つ推定するごとに自由度が1減り、単回帰では2つ推定するので n-2。"}, {"id": "k001", "unit": "確率・条件付き確率", "question": "サイコロを1回振るとき、偶数または3の倍数が出る確率はどれか。", "choices": ["1/2", "2/3", "5/6", "1/3"], "answer": 1, "explanation": "【正解】2/3\n\n■ 加法定理（和の確率）\n「AまたはB」の確率を求めるときは加法定理を使います。\nP(A∪B) = P(A) + P(B) − P(A∩B)\n\n■ 解き方\n事象A「偶数」= {2, 4, 6} → P(A) = 3/6 = 1/2\n事象B「3の倍数」= {3, 6} → P(B) = 2/6 = 1/3\n積事象A∩B「偶数かつ3の倍数」= {6} → P(A∩B) = 1/6\n\nP(A∪B) = 1/2 + 1/3 − 1/6 = 3/6 + 2/6 − 1/6 = 4/6 = 2/3\n\n■ なぜ引くの？\n{6} はAにもBにも含まれているので、そのまま足すと2回数えてしまいます。だから1回分を引きます。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.1節「事象と確率」（確率の定義・加法定理）", "difficulty": "basic", "type": "calculation", "key_concept": "加法定理 P(A∪B)=P(A)+P(B)−P(A∩B) による「または」の確率計算", "common_mistake": "P(A∩B)を引き忘れて P(A)+P(B) だけで計算してしまい、両方に属する元素を二重計算する。"}, {"id": "k002", "unit": "確率・条件付き確率", "question": "袋の中に赤玉3個・白玉2個が入っている。2個同時に取り出すとき、2個とも赤玉である確率はどれか。", "choices": ["9/25", "3/10", "6/25", "1/5"], "answer": 1, "explanation": "【正解】3/10\n\n■ 組み合わせで考える\n全部の取り出し方：5個からの2個選び = C(5,2) = 10 通り\n2個とも赤玉の取り出し方：赤3個からの2個選び = C(3,2) = 3 通り\n\nP = 3/10\n\n■ 確認：積の法則でも解ける\n1個目が赤の確率 = 3/5\n2個目が赤の確率（1個目が赤だったとき）= 2/4 = 1/2\nP = 3/5 × 1/2 = 3/10 ✓\n\n■ ポイント\n「同時に」取り出す場合と「1個ずつ」取り出す場合（非復元）は同じ確率になります。順序を考えないなら組み合わせ C、考えるなら順列 P を使います。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.1節「事象と確率」（確率の計算・組み合わせ）", "difficulty": "basic", "type": "calculation", "key_concept": "組み合わせ C(n,k) を用いた非復元抽出の確率計算", "common_mistake": "復元抽出（毎回確率が同じ）と非復元抽出（取り出すごとに確率が変わる）を混同し、(3/5)²のように計算してしまう。"}, {"id": "k003", "unit": "確率・条件付き確率", "question": "あるテストで合格率は40%である。1人がテストを受けるとき、少なくとも1回は合格する確率（3回受験できるとして）はどれか。", "choices": ["0.400", "0.648", "0.784", "0.936"], "answer": 2, "explanation": "【正解】0.784\n\n■ 「少なくとも1回」は余事象で考える\n「少なくとも1回合格」= 1 − 「3回とも不合格」\n\n1回の不合格確率 = 1 − 0.4 = 0.6\n3回とも不合格の確率 = 0.6³ = 0.216\n\nP(少なくとも1回合格) = 1 − 0.216 = 0.784\n\n■ なぜ余事象を使うの？\n「少なくとも1回」を直接計算しようとすると、「ちょうど1回」「ちょうど2回」「3回とも」合格の場合を全部足さなければなりません。余事象を使うと一発で計算できます。\n\n■ 余事象の公式\nP(A) = 1 − P(Aの余事象)\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.1節「事象と確率」（余事象・加法定理）", "difficulty": "standard", "type": "application", "key_concept": "余事象を使って「少なくとも1回」の確率を 1−P(全て失敗) で効率よく求める", "common_mistake": "「ちょうど1回」「ちょうど2回」「3回とも」を個別に計算して足そうとし、場合分けが複雑になってミスする。"}, {"id": "k004", "unit": "確率・条件付き確率", "question": "P(A)=0.4、P(B)=0.3、P(A∩B)=0.12 のとき、A と B は独立かどうかを判断する根拠として正しいものはどれか。", "choices": ["P(A)+P(B)=0.7 なので独立でない", "P(A)×P(B)=0.12=P(A∩B) なので独立", "P(A∩B)>0 なので独立でない", "P(A|B)=P(B) なので独立"], "answer": 1, "explanation": "【正解】P(A)×P(B)=0.12=P(A∩B) なので独立\n\n■ 独立の定義\n2つの事象A・Bが独立であるとは、一方の結果がもう一方の確率に影響しないことです。\n数式では次のように定義します。\n\nP(A∩B) = P(A) × P(B)\n\n■ 確認\nP(A) × P(B) = 0.4 × 0.3 = 0.12\nP(A∩B) = 0.12\n\n両者が等しいので、A と B は独立です。\n\n■ 独立と排反の違い（混同注意！）\n・独立：P(A∩B) = P(A)×P(B)　→ 互いに影響しない\n・排反：P(A∩B) = 0　→ 同時に起きない（例：サイコロで偶数と奇数）\n独立な事象は必ずしも排反ではありません。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.1節「事象と確率」（独立性の定義）", "difficulty": "standard", "type": "definition", "key_concept": "独立の定義：P(A∩B)=P(A)×P(B) が成立すること", "common_mistake": "独立（影響がない）と排反（同時に起こらない）を混同する。排反はP(A∩B)=0であり、独立とは全く別の概念。"}, {"id": "k005", "unit": "確率・条件付き確率", "question": "条件付き確率 P(A|B) の定義として正しいものはどれか。", "choices": ["P(A|B) = P(A) × P(B)", "P(A|B) = P(A∩B) / P(B)", "P(A|B) = P(A) + P(B) − P(A∩B)", "P(A|B) = P(B∩A) / P(A)"], "answer": 1, "explanation": "【正解】P(A|B) = P(A∩B) / P(B)\n\n■ 条件付き確率とは？\nP(A|B)は「B が起きたという条件のもとで、A が起きる確率」です。\n\n■ 直感的な理解\n・全体の確率空間から「Bが起きた」という情報で空間を絞り込みます\n・絞り込んだ空間（P(B)）の中で A が起きる割合 P(A∩B) を求めます\n・式：P(A|B) = P(A∩B) / P(B)（ただし P(B)>0）\n\n■ 選択肢の確認\n・①は乗法定理の式（A・Bが独立な場合のP(A∩B)）\n・③は加法定理（AまたはBの確率）\n・④はP(B|A)の式（AとBが入れ替わっている）\n\n■ 乗法定理（変形）\nP(A∩B) = P(B) × P(A|B) = P(A) × P(B|A)\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.2節「条件付き確率」（定義・乗法定理）", "difficulty": "basic", "type": "definition", "key_concept": "条件付き確率の定義式 P(A|B)=P(A∩B)/P(B)", "common_mistake": "P(A|B)とP(B|A)を混同する（「BのときA」と「AのときB」は一般に異なる）。検定の感度と特異度の混同もこのパターン。"}, {"id": "k006", "unit": "確率・条件付き確率", "question": "ある病気の有病率は1%である。この病気の検査は、病気がある人に対して陽性を示す確率（感度）が90%、病気がない人に対して陰性を示す確率（特異度）が95%である。検査で陽性だったとき、実際に病気である確率（陽性的中率）として最も近いものはどれか。", "choices": ["約 9%", "約 15%", "約 47%", "約 90%"], "answer": 1, "explanation": "【正解】約 15%\n\n■ ベイズの定理の典型問題\n有病率が低いと「陽性でも病気ではない」ことが多い、という直感に反する結果が出ます。\n\n■ 具体的に計算（1000人で考える）\n・病気あり：1000 × 0.01 = 10人\n　→ 陽性（真陽性）：10 × 0.90 = 9人\n　→ 陰性（偽陰性）：1人\n・病気なし：990人\n　→ 陽性（偽陽性）：990 × 0.05 = 49.5 ≈ 50人\n　→ 陰性（真陰性）：940人\n\n陽性合計：9 + 50 = 59人\n陽性的中率 = 9 / 59 ≈ 0.153 ≈ 約15%\n\n■ ポイント\n感度が高くても、有病率が低いと偽陽性が多くなり、陽性的中率は下がります。これは医療検査・スパムフィルターなど多くの場面で重要な概念です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.3節「ベイズの定理」（事前確率・事後確率・全確率の定理）", "difficulty": "advanced", "type": "application", "key_concept": "ベイズの定理を使った陽性的中率の計算。有病率が低いと感度が高くても陽性的中率は低い", "common_mistake": "感度90%＝陽性的中率90%と直感的に誤解する。偽陽性の人数（有病率が低いと多い）を考慮しないと正しく計算できない。"}, {"id": "k007", "unit": "確率・条件付き確率", "question": "ベイズの定理 P(A|B) = P(B|A)P(A) / P(B) において、P(A) を何というか。", "choices": ["事後確率", "事前確率", "尤度", "周辺確率"], "answer": 1, "explanation": "【正解】事前確率\n\n■ ベイズの定理の各要素\n・P(A)：事前確率（prior）\n　→ Bの情報を得る「前」のAに関する確率\n　→ 例：検査前の有病率\n\n・P(A|B)：事後確率（posterior）\n　→ Bの情報を得た「後」のAに関する確率\n　→ 例：陽性だったときの有病率（陽性的中率）\n\n・P(B|A)：尤度（likelihood）\n　→ A が真のときにB が観測される確率\n　→ 例：病気の人が陽性になる確率（感度）\n\n・P(B)：周辺確率（全確率の定理で計算）\n　→ 正規化定数の役割\n\n■ ベイズの考え方\n「新しい証拠（B）を使って、事前の信念（P(A)）を更新し、事後の信念（P(A|B)）を得る」\nこれが統計的推測の基礎となる考え方です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.3節「ベイズの定理」", "difficulty": "standard", "type": "definition", "key_concept": "ベイズの定理における事前確率（P(A)）・尤度（P(B|A)）・事後確率（P(A|B)）の意味", "common_mistake": "事前確率と事後確率の意味を逆に覚える。事前＝情報を得る前、事後＝情報を得た後、という順序を確認する。"}, {"id": "k008", "unit": "確率・条件付き確率", "question": "コインを3回投げるとき、表が2回以上出る確率はどれか（コインは表・裏が等確率）。", "choices": ["3/8", "1/2", "5/8", "3/4"], "answer": 1, "explanation": "【正解】1/2\n\n■ 2項分布で考える\nコインを n=3 回投げ、表の確率 p=1/2 とします。\n表が k 回出る確率：P(X=k) = C(3,k) × (1/2)³\n\n各確率：\n・P(X=0) = C(3,0)×(1/2)³ = 1/8\n・P(X=1) = C(3,1)×(1/2)³ = 3/8\n・P(X=2) = C(3,2)×(1/2)³ = 3/8\n・P(X=3) = C(3,3)×(1/2)³ = 1/8\n\n■ 「2回以上」の確率\nP(X≥2) = P(X=2) + P(X=3) = 3/8 + 1/8 = 4/8 = 1/2\n\n■ 余事象でも確認\nP(X≥2) = 1 − P(X≤1) = 1 − (1/8 + 3/8) = 1 − 4/8 = 1/2 ✓\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.7節「主な離散型確率分布」（2項分布の定義・計算）", "difficulty": "standard", "type": "calculation", "key_concept": "二項分布 B(n,p) での確率計算と余事象「少なくとも」の活用", "common_mistake": "「2回以上」を「ちょうど2回」と誤解する。また、各確率の係数 C(3,k) を忘れて (1/2)^3 だけで計算してしまう。"}, {"id": "k009", "unit": "確率・条件付き確率", "question": "確率変数 X の期待値 E[X] = 3、分散 V[X] = 4 のとき、Y = 2X + 1 の期待値と分散の組み合わせとして正しいものはどれか。", "choices": ["E[Y]=7、V[Y]=9", "E[Y]=7、V[Y]=16", "E[Y]=7、V[Y]=17", "E[Y]=6、V[Y]=16"], "answer": 1, "explanation": "【正解】E[Y]=7、V[Y]=16\n\n■ 期待値と分散の線形変換の公式\nY = aX + b のとき：\n　・E[Y] = aE[X] + b\n　・V[Y] = a²V[X]（定数 b は分散に影響しない）\n\n■ 計算\nE[Y] = 2×3 + 1 = 7\nV[Y] = 2² × 4 = 4 × 4 = 16\n\n■ なぜ分散に b が入らないの？\n分散は「平均からのばらつき」を測ります。全データに定数を足しても散らばり具合は変わらないため、b は分散に影響しません。\n\n■ 標準偏差は？\nSD[Y] = √V[Y] = √16 = 4\n（元の標準偏差 2 に a=2 をかけた値）\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.5節「期待値と分散」（線形変換の性質）", "difficulty": "standard", "type": "calculation", "key_concept": "線形変換 Y=aX+b の期待値 E[Y]=aE[X]+b と分散 V[Y]=a²V[X]", "common_mistake": "分散にも定数 b を加えて V[aX+b]=a²V[X]+b² と誤計算する。定数の加減はばらつきに影響しない。"}, {"id": "k010", "unit": "確率・条件付き確率", "question": "ポアソン分布に従う確率変数 X のパラメータ λ=2 のとき、E[X] と V[X] の値はどれか。", "choices": ["E[X]=1、V[X]=2", "E[X]=2、V[X]=2", "E[X]=2、V[X]=4", "E[X]=√2、V[X]=2"], "answer": 1, "explanation": "【正解】E[X]=2、V[X]=2\n\n■ ポアソン分布とは？\nPoisson(λ) は「単位時間・単位面積あたりに平均 λ 回起きる事象が、ちょうど k 回起きる確率」を表します。\n例：1時間に平均2件来る問い合わせが k 件来る確率\n\n■ ポアソン分布の重要な性質\n　E[X] = λ\n　V[X] = λ\n\n→ 期待値と分散が「どちらも λ」で等しいのがポアソン分布の大きな特徴です！\n\n■ 2項分布との関係\nポアソン分布は「n が大きく p が小さい」2項分布 B(n,p) の近似として導出されます（λ = np）。\n\n■ 適用場面\n・交通事故の件数\n・放射線の崩壊回数\n・ウェブサイトへのアクセス数\nなど「稀な事象の回数」に使われます。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.7節「主な離散型確率分布」（ポアソン分布）", "difficulty": "standard", "type": "property", "key_concept": "ポアソン分布 Po(λ) では期待値と分散がともに λ で等しい", "common_mistake": "分散をλ²（ポアソンでなく正規分布的な発想）と誤って覚える。期待値＝分散＝λ はポアソン分布固有の重要な性質。"}, {"id": "kn001", "unit": "検定の応用", "question": "仮説検定で「第一種過誤（αエラー）」の説明として正しいものはどれか。", "choices": ["帰無仮説が偽なのに棄却しないこと", "帰無仮説が真なのに棄却してしまうこと", "対立仮説が真なのに採択しないこと", "標本サイズが小さすぎること"], "answer": 1, "explanation": "【正解】帰無仮説が真なのに棄却してしまうこと\n\n■ 2種類の過誤\n仮説検定では、真実とは異なる判断をしてしまうリスクが2種類あります。\n\n┌──────────────┬──────────────┬──────────────┐\n│　　　　　　　　│ H₀が真（差なし）│ H₀が偽（差あり）│\n├──────────────┼──────────────┼──────────────┤\n│ H₀を棄却する　 │ 第一種過誤（α） │ 正解（検出力） │\n│ H₀を棄却しない │ 正解　　　　　 │ 第二種過誤（β）│\n└──────────────┴──────────────┴──────────────┘\n\n■ 第一種過誤（α）\n「本当は差がないのに、差があると判断する」= 誤検知\n有意水準 α はこの確率の上限です。α=0.05なら第一種過誤は5%以下に抑えます。\n\n■ 第二種過誤（β）\n「本当は差があるのに、差がないと判断する」= 見逃し\n検出力 = 1 − β（差を正しく検出できる確率）\n\n■ トレードオフ\nα を小さくすると β が大きくなります。両方同時に小さくするには標本サイズを増やします。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章「統計的仮説検定」\n　▶ 4.1節「仮説検定の考え方」（第一種・第二種過誤）\n　▶ 付録 7.2節「仮説検定の基礎的理論」", "difficulty": "standard", "type": "definition", "key_concept": "第一種過誤（αエラー）：H₀が真なのに棄却。第二種過誤（βエラー）：H₀が偽なのに棄却しない", "common_mistake": "第一種と第二種の定義を入れ替えて覚えてしまう。「第一種＝誤検知（冤罪）、第二種＝見逃し」と対応させて記憶するとよい。"}, {"id": "kn002", "unit": "検定の応用", "question": "p値の説明として正しいものはどれか。", "choices": ["帰無仮説が真である確率", "帰無仮説が真のとき、観測値以上に極端な結果が得られる確率", "有意水準のこと", "対立仮説が正しい確率"], "answer": 1, "explanation": "【正解】帰無仮説が真のとき、観測値以上に極端な結果が得られる確率\n\n■ p値とは？\np値（p-value）は「帰無仮説が正しいと仮定したとき、今回の観測値と同じかそれ以上に極端な結果が偶然に現れる確率」です。\n\n■ 判断ルール\n・p値 < α（有意水準）→ 帰無仮説を棄却（有意差あり）\n・p値 ≥ α → 帰無仮説を棄却しない\n\n■ よくある誤解\n❌「p値 = H₀が真の確率」→ 間違い\n❌「p値が小さいほど差が大きい」→ 必ずしもそうでない（効果量を別途確認）\n✅「p値は証拠の強さの指標の1つ」\n\n■ 例\nコインを10回投げて10回表が出たとき、p値（両側検定）= (1/2)¹⁰ × 2 ≈ 0.002\n→ p < 0.05 なので「公平なコインではない」と判断\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章「統計的仮説検定」\n　▶ 4.1節「仮説検定の考え方」（p値の定義と解釈）", "difficulty": "standard", "type": "definition", "key_concept": "p値：H₀が真のとき、観測値以上に極端な結果が起きる確率（H₀が真の確率ではない）", "common_mistake": "「p値＝帰無仮説が真である確率」という誤解が最も多い。p値はH₀のもとで計算された条件付き確率であり、H₀自体の確率ではない。"}, {"id": "kn003", "unit": "検定の応用", "question": "母分散が未知のとき、1標本の母平均の検定（t検定）で使う検定統計量として正しいものはどれか。n は標本サイズ、X̄ は標本平均、μ₀ は帰無仮説の母平均、s は標本標準偏差とする。", "choices": ["Z = (X̄ − μ₀) / (σ/√n)", "T = (X̄ − μ₀) / (s/√n)", "T = (X̄ − μ₀) × √n / σ", "Z = (X̄ − μ₀) × s/√n"], "answer": 1, "explanation": "【正解】T = (X̄ − μ₀) / (s/√n)\n\n■ z検定 vs t検定\n・母分散 σ² が既知 → Z = (X̄ − μ₀) / (σ/√n) ～ N(0,1)\n・母分散 σ² が未知 → T = (X̄ − μ₀) / (s/√n) ～ t(n−1)\n\n■ この統計量の読み方\n「標本平均 X̄ が帰無仮説の値 μ₀ から、標準誤差の何倍離れているか」を測ります。\n\n■ 自由度\nt分布の自由度は n−1 です。自由度が大きいほど t分布は標準正規分布に近づきます。\n\n■ 実務では？\n母分散が既知であることは稀なので、ほとんどの場合 t 検定を使います。n が十分大きい（目安 n ≥ 30）場合は z 検定と t 検定の結果はほぼ同じになります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章「統計的仮説検定」\n　▶ 4.3節「1標本問題」（t検定の検定統計量・自由度）", "difficulty": "standard", "type": "definition", "key_concept": "母分散未知の1標本t検定：T=(X̄-μ₀)/(s/√n)～t(n-1)", "common_mistake": "母分散既知のZ統計量の式 (X̄-μ₀)/(σ/√n) を使ってしまう。未知の場合は σ の代わりに標本標準偏差 s を使う。"}, {"id": "kn004", "unit": "検定の応用", "question": "独立した2群の母平均の差の検定（2標本t検定）で、等分散を仮定する場合の自由度はどれか。n₁、n₂ は各群の標本サイズとする。", "choices": ["n₁ + n₂", "n₁ + n₂ − 2", "n₁ + n₂ − 1", "min(n₁, n₂) − 1"], "answer": 1, "explanation": "【正解】n₁ + n₂ − 2\n\n■ 自由度の求め方\n各群でそれぞれ1つのパラメータ（平均）を推定するため、自由度を1ずつ失います。\n　群1の自由度：n₁ − 1\n　群2の自由度：n₂ − 1\n　合計：(n₁−1) + (n₂−1) = n₁ + n₂ − 2\n\n■ 例\nn₁=10、n₂=12 なら、自由度 = 10 + 12 − 2 = 20\nt分布（自由度20）の棄却点を使って判定します。\n\n■ Welchのt検定（等分散を仮定しない場合）\n2群の母分散が異なる可能性があるときは Welch の検定を使います。自由度は複雑な計算式（Satterthwaite 近似）になります。\n実際のデータ分析では、まずF検定で等分散を確認してからどちらを使うか決めます。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章「統計的仮説検定」\n　▶ 4.4節「2標本問題」（等分散・非等分散の場合の検定）", "difficulty": "standard", "type": "calculation", "key_concept": "等分散2標本t検定の自由度は (n₁-1)+(n₂-1)=n₁+n₂-2", "common_mistake": "自由度を n₁+n₂-1 や n₁+n₂ と誤答する。各群で平均を1つ推定するため自由度を1ずつ失い、合計2を引く。"}, {"id": "kn005", "unit": "検定の応用", "question": "対応のある2標本（例：治療前後の測定値）の平均差の検定として適切なものはどれか。", "choices": ["独立2標本t検定", "対応のあるt検定（1標本t検定）", "カイ二乗検定", "F検定"], "answer": 1, "explanation": "【正解】対応のあるt検定（1標本t検定）\n\n■ 対応のあるデータとは？\n同じ対象を2回測定した場合（例：ダイエット前後の体重）や、ペアになっているデータです。各ペアの差 dᵢ = xᵢ₁ − xᵢ₂ を計算し、それを1標本として扱います。\n\n■ なぜ独立2標本t検定ではないの？\n対応のあるデータは独立ではありません。独立2標本t検定は「2群が完全に独立している」ことを前提にしています。\n\n■ 対応のあるt検定の手順\n① 各ペアの差 d = X₁ − X₂ を計算する\n② d の平均 d̄ と標準偏差 sₐ を求める\n③ T = d̄ / (sₐ/√n) ～ t(n−1) で検定する\n\n■ メリット\n個人差（個体差）の影響を除けるため、同じ効果でも差を検出しやすくなります（検出力が上がる）。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章「統計的仮説検定」\n　▶ 4.4節「2標本問題」（対応のある場合の検定）", "difficulty": "standard", "type": "application", "key_concept": "対応のあるデータは差 d=X₁-X₂ を計算し、dに対して1標本t検定を実施する", "common_mistake": "対応がある場合でも独立2標本t検定を適用してしまう。独立2標本は「2群のデータに対応関係がない」場合にのみ使える。"}, {"id": "kn006", "unit": "検定の応用", "question": "カテゴリカルデータの「独立性の検定」に用いる検定統計量として正しいものはどれか。", "choices": ["t統計量", "カイ二乗統計量（χ²）", "F統計量", "Z統計量"], "answer": 1, "explanation": "【正解】カイ二乗統計量（χ²）\n\n■ 独立性の検定とは？\n2つのカテゴリ変数の間に関連があるか（独立か）を検定します。\n例：「性別」と「製品の好み」は関係があるか？\n\n■ カイ二乗統計量\nχ² = Σ (観測度数 − 期待度数)² / 期待度数\n\n・観測度数：実際に観測されたデータの度数\n・期待度数：独立を仮定したときに期待される度数\n\n■ 帰無仮説と判断\n・H₀：2変数は独立（関連なし）\n・χ² が大きい → 観測値と期待値のズレが大きい → 独立でない（関連あり）\n・自由度 = (行数−1) × (列数−1)\n\n■ 使用条件の注意\n期待度数が小さい（目安：5未満）セルが多いとχ²検定の精度が下がります。その場合はフィッシャーの正確検定を使います。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第6章「その他の分析法」\n　▶ 6.3節「独立性の検定」（χ²検定の検定統計量・自由度）", "difficulty": "standard", "type": "definition", "key_concept": "カテゴリカルデータの独立性検定は χ²=(観測-期待)²/期待 の和を統計量とする", "common_mistake": "カテゴリカルデータ（度数）に連続量向けの t 検定を適用してしまう。データの尺度水準（名義・順序・間隔・比率）を確認してから検定法を選ぶ。"}, {"id": "kn007", "unit": "検定の応用", "question": "適合度の検定（χ²検定）において、3カテゴリのデータで帰無仮説「各カテゴリの比率は均等（1/3ずつ）」を検定するときの自由度はどれか。", "choices": ["1", "2", "3", "4"], "answer": 1, "explanation": "【正解】2\n\n■ 適合度検定の自由度\n適合度検定の自由度 = カテゴリ数 − 1\n\n3カテゴリなので：自由度 = 3 − 1 = 2\n\n■ なぜ「カテゴリ数 − 1」なの？\n各カテゴリの比率の合計は常に1（100%）です。そのため、2つのカテゴリの比率が決まれば、残りの1つは自動的に決まります。独立に決められる比率は「カテゴリ数 − 1」個なので、自由度も同じです。\n\n■ 適合度検定と独立性検定の自由度の違い\n・適合度検定：自由度 = k − 1（k：カテゴリ数）\n・独立性検定：自由度 = (r−1)(c−1)（r：行数、c：列数）\n\n■ 判断\nχ²統計量がχ²分布（自由度2）の上側 α 点より大きければ帰無仮説を棄却します。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第6章「その他の分析法」\n　▶ 6.2節「適合度の検定」", "difficulty": "standard", "type": "calculation", "key_concept": "適合度検定の自由度はカテゴリ数-1（比率の合計=1という制約の分を引く）", "common_mistake": "自由度をカテゴリ数そのままの3と誤答する。k個のカテゴリの確率の合計は常に1なので自由に決められる確率はk-1個。"}, {"id": "kn008", "unit": "検定の応用", "question": "「検出力（Power）」の説明として正しいものはどれか。", "choices": ["有意水準のこと", "帰無仮説が偽のとき、正しく棄却できる確率", "帰無仮説が真のとき、棄却しない確率", "標本サイズの逆数"], "answer": 1, "explanation": "【正解】帰無仮説が偽のとき、正しく棄却できる確率\n\n■ 検出力（Power）= 1 − β\nβ は第二種過誤（見逃し）の確率なので、検出力 = 1 − β = 「真の差を正しく検出できる確率」です。\n\n■ 検出力に影響する要因\n① 標本サイズ n：大きいほど検出力↑\n② 効果量（真の差の大きさ）：大きいほど検出力↑\n③ 有意水準 α：大きいほど検出力↑（ただし第一種過誤も↑）\n④ 分散：小さいほど検出力↑\n\n■ 検出力分析の実務\n研究計画の段階で「最低限必要な標本サイズ」を決めるために使います。一般的に検出力80%（β=0.2）以上を目標とすることが多いです。\n\n■ 選択肢の確認\n・①は有意水準α（第一種過誤の上限）\n・③は「正しく帰無仮説を採択する確率」= 1 − α（特異度に相当）\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章「統計的仮説検定」\n　▶ 4.1節「仮説検定の考え方」（検出力・第二種過誤）\n　▶ 付録 7.2節「仮説検定の基礎的理論」", "difficulty": "standard", "type": "definition", "key_concept": "検出力=1-β=H₀が偽のとき正しく棄却できる確率。n・効果量・αが大きいほど高い", "common_mistake": "検出力を有意水準α（第一種過誤の確率）と混同する。αは誤検知の上限、検出力は真の差を見つける力（別の概念）。"}, {"id": "kn009", "unit": "検定の応用", "question": "2つの母集団の分散が等しいかを検定するF検定の検定統計量はどれか。s₁²、s₂² は各群の不偏分散（s₁² ≥ s₂² とする）。", "choices": ["F = s₁² − s₂²", "F = s₁² / s₂²", "F = (s₁² + s₂²) / 2", "F = √(s₁² / s₂²)"], "answer": 1, "explanation": "【正解】F = s₁² / s₂²\n\n■ F検定とは？\n2つの母分散が等しいか（σ₁² = σ₂²）を検定します。\n2標本t検定の前提確認や、分散分析で用いられます。\n\n■ F統計量\nF = s₁² / s₂²（大きい方を分子にすることが多い）\n\n帰無仮説 σ₁² = σ₂² のもとで、F は F分布に従います。\n自由度：(n₁−1, n₂−1)\n\n■ F分布の特徴\n・正の値のみをとる（分散の比なので0以上）\n・右に歪んだ分布\n・2つの自由度パラメータを持つ\n\n■ 判断\nF値が1から大きく外れるほど、2群の分散が異なると判断します（両側検定の場合）。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章「統計的仮説検定」\n　▶ 4.4節「2標本問題」（等分散検定）\n　▶ 第2章 2.10節「標本分布」（F分布）", "difficulty": "standard", "type": "definition", "key_concept": "F統計量＝2群の分散の比 s₁²/s₂² でF分布に従い等分散を検定する", "common_mistake": "F統計量の分子と分母を逆にしたり、F分布とt分布・χ²分布を混同する。F分布は必ず正の値をとる非対称な分布。"}, {"id": "kn010", "unit": "検定の応用", "question": "正規性の検定に関する説明として正しいものはどれか。", "choices": ["正規性の検定で有意でないことは、正規分布であることを証明する", "正規性の検定で有意でないことは、正規分布を仮定することが支持されることを意味するが証明ではない", "n が大きいほど正規性の検定で有意になりにくい", "ヒストグラムだけで正規性を確認できる"], "answer": 1, "explanation": "【正解】正規性の検定で有意でないことは、正規分布を仮定することが支持されることを意味するが証明ではない\n\n■ 正規性の検定（例：Shapiro-Wilk検定、Kolmogorov-Smirnov検定）\nH₀：データは正規分布に従う\nH₁：データは正規分布に従わない\n\n■ 選択肢の解説\n①「証明する」は間違い。検定で「棄却しない」ことは「H₀が真である証明」ではありません。「H₀を否定する十分な証拠がない」という意味に過ぎません。\n\n③ 逆です。n が大きいほど小さなズレも検出でき、有意になりやすくなります。大標本では正規性からの微小な逸脱でも有意差になるため、正規性検定はあまり役に立ちません。\n\n④ ヒストグラムは主観的判断が入るため、定量的確認にはQQプロットや検定を使います。\n\n■ 実務的な注意\nn が大きい場合、正規性から少し外れても中心極限定理により推測は妥当です。正規性より外れ値や歪みの程度を確認することが重要です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第6章「その他の分析法」\n　▶ 6.1節「正規性の検討」", "difficulty": "advanced", "type": "application", "key_concept": "帰無仮説を棄却しないことは「H₀が真の証明」ではなく「否定する十分な証拠がない」こと", "common_mistake": "「正規性検定で有意でない＝正規分布である」と断言してしまう。また、nが大きいほど検出力が上がり有意になりやすい逆転現象も見落としやすい。"}, {"id": "ks001", "unit": "記述統計", "question": "次のデータの分散はどれか。\n\n2, 4, 4, 4, 5, 5, 7, 9", "choices": ["2", "4", "5", "6"], "answer": 1, "explanation": "【正解】4\n\n■ 分散の求め方\n分散 = 各データの「(値 − 平均)²」の平均\n\n① 平均を求める\n(2+4+4+4+5+5+7+9) ÷ 8 = 40 ÷ 8 = 5\n\n② 各値と平均の差の二乗を求める\n(2-5)²=9, (4-5)²=1, (4-5)²=1, (4-5)²=1\n(5-5)²=0, (5-5)²=0, (7-5)²=4, (9-5)²=16\n\n③ 平均をとる\n(9+1+1+1+0+0+4+16) ÷ 8 = 32 ÷ 8 = 4\n\n■ 標準偏差は？\n標準偏差 = √分散 = √4 = 2\n元のデータと同じ単位で「ばらつき」を表せます。\n\n■ 不偏分散との違い\n母分散（上の計算）は n で割ります。\n標本から母分散を推定する不偏分散は (n-1) で割ります。\nこのデータなら：32 ÷ 7 ≈ 4.57\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.3節「分布の特徴を表す指標」（分散・標準偏差）", "difficulty": "basic", "type": "calculation", "key_concept": "分散は各値と平均の差の二乗の平均。標準偏差はその平方根", "common_mistake": "差を二乗せずに差の絶対値の平均（平均絶対偏差）を計算してしまう。または n-1 で割る不偏分散と混同する。"}, {"id": "ks002", "unit": "記述統計", "question": "5, 10, 15, 20, 25, 30, 35, 40 のデータの第1四分位数（Q1）として正しいものはどれか。", "choices": ["10", "12.5", "15", "17.5"], "answer": 1, "explanation": "【正解】12.5\n\n■ 四分位数とは？\nデータを小さい順に並べたとき、4等分する区切りの値です。\n・Q1（第1四分位数）：下位25%の位置\n・Q2（第2四分位数）：中央値（50%の位置）\n・Q3（第3四分位数）：上位25%の位置\n\n■ 求め方（n=8個）\nデータ：5, 10, 15, 20, 25, 30, 35, 40\n\nQ2（中央値）：4番目と5番目の平均 = (20+25)/2 = 22.5\n\nQ1：下半分 {5, 10, 15, 20} の中央値\n　= (10+15)/2 = 12.5\n\nQ3：上半分 {25, 30, 35, 40} の中央値\n　= (30+35)/2 = 32.5\n\n■ 四分位範囲（IQR）\nIQR = Q3 − Q1 = 32.5 − 12.5 = 20\nIQR は外れ値の影響を受けにくいばらつきの指標です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.3節「分布の特徴を表す指標」（四分位数・四分位範囲）", "difficulty": "standard", "type": "calculation", "key_concept": "Q1は下半分データの中央値。n が偶数のときは前後の平均を取る", "common_mistake": "データ全体の中央値（Q2）をQ1と誤答する。または下半分の個数を間違えて境界をずらして計算する。"}, {"id": "ks003", "unit": "記述統計", "question": "変動係数（CV: Coefficient of Variation）の計算式として正しいものはどれか。", "choices": ["CV = 平均 / 標準偏差", "CV = 標準偏差 / 平均", "CV = 分散 / 平均", "CV = 標準偏差 / 中央値"], "answer": 1, "explanation": "【正解】CV = 標準偏差 / 平均\n\n■ 変動係数とは？\nCV = 標準偏差 / 平均（× 100 でパーセント表示にすることも多い）\n\n■ なぜ必要？\n標準偏差だけではスケール（単位）が違うデータを比較できません。\n例）\n　・体重のSD=5kg（平均60kg）→ CV=5/60≈8%\n　・身長のSD=5cm（平均160cm）→ CV=5/160≈3%\n\n「どちらのばらつきが相対的に大きいか」は CV で比較します。\n\n■ 特徴\n・単位のない無次元量なので異なる指標を比較できる\n・平均が0に近いデータや負の値を含むデータには使えない\n・品質管理・比較分析でよく使われる\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.3節「分布の特徴を表す指標」（変動係数）", "difficulty": "standard", "type": "definition", "key_concept": "変動係数 CV=標準偏差/平均 は単位なしのばらつき指標。異なる単位のデータを比較できる", "common_mistake": "分子と分母を逆にして CV=平均/標準偏差 と誤答する。分母は「基準（平均）」で割るのが相対比較の考え方。"}, {"id": "ks004", "unit": "記述統計", "question": "データの分布が右に長い尾を持つ（右歪み・正の歪度）とき、一般に成り立つ関係はどれか。", "choices": ["平均 < 中央値 < 最頻値", "最頻値 < 中央値 < 平均", "最頻値 = 中央値 = 平均", "平均 < 最頻値 < 中央値"], "answer": 1, "explanation": "【正解】最頻値 < 中央値 < 平均\n\n■ 歪みと代表値の関係\n右歪み（正の歪度）の分布では、右側（大きい値の方向）に外れ値があります。\n\n・最頻値（モード）：山の頂点 → 最も小さい\n・中央値：真ん中 → 中間\n・平均：外れ値に引っ張られる → 最も大きい\n\n例：年収データは右歪みが多い。少数の高所得者が平均を引き上げるため、「平均年収より中央値の方が実態を表す」とよく言われます。\n\n■ 左歪み（負の歪度）の場合\n逆になります：平均 < 中央値 < 最頻値\n\n■ 対称（正規）分布の場合\n平均 = 中央値 = 最頻値\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.2節「量的データの分布」（歪度の定義と解釈）\n　▶ 第1章 1.3節「分布の特徴を表す指標」（代表値の関係）", "difficulty": "standard", "type": "property", "key_concept": "右歪み分布では 最頻値＜中央値＜平均（外れ値が平均を右に引っ張る）", "common_mistake": "右歪みなので「右が大きい＝平均が右（大）」という方向は正しいが、最頻値と中央値の順序を逆に覚えてしまう。"}, {"id": "ks005", "unit": "記述統計", "question": "外れ値（outlier）の検出基準として「フェンス法」を用いるとき、上側フェンスの計算式として正しいものはどれか。IQR は四分位範囲、Q3 は第3四分位数とする。", "choices": ["Q3 + IQR", "Q3 + 1.5 × IQR", "Q3 + 2 × IQR", "Q3 + 3 × IQR"], "answer": 1, "explanation": "【正解】Q3 + 1.5 × IQR\n\n■ フェンス法（Tukey's fence）\nジョン・テューキーが提案した外れ値検出の基準です。\n\n・下側フェンス：Q1 − 1.5 × IQR\n・上側フェンス：Q3 + 1.5 × IQR\n\nこの範囲を外れた値を外れ値の候補とします。\n\n■ なぜ1.5倍？\n正規分布では、この範囲に約99.3%のデータが含まれます。経験的に「1.5倍」が妥当な外れ値判定基準として広く使われています。\n\n■ 箱ひげ図との関係\n箱ひげ図の「ひげ」はこのフェンスまで伸び、フェンス外の点は個別に「○」で表示されます。\n\n■ 極端な外れ値の基準\n3.0 × IQR を超えたものを「強い外れ値」とすることもあります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.3節「分布の特徴を表す指標」\n　▶ 第1章 1.4節「量的データの要約とグラフ表現」（箱ひげ図）", "difficulty": "standard", "type": "definition", "key_concept": "外れ値のフェンス法：上側は Q3+1.5×IQR、下側は Q1−1.5×IQR", "common_mistake": "係数を1.5ではなく1や2と誤答する。1.5という値はフェンス法の定義であり暗記が必要。"}, {"id": "ks006", "unit": "記述統計", "question": "度数分布表において「相対度数」の説明として正しいものはどれか。", "choices": ["各階級の度数の累計", "各階級の度数を全データ数で割った値", "各階級の幅（区間の長さ）", "度数を階級幅で割った値"], "answer": 1, "explanation": "【正解】各階級の度数を全データ数で割った値\n\n■ 度数分布表の用語整理\n\n| 用語 | 定義 |\n|------|------|\n| 度数 | 各階級に含まれるデータの個数 |\n| 相対度数 | 度数 ÷ 全データ数（= 割合） |\n| 累積度数 | その階級までの度数の合計 |\n| 累積相対度数 | その階級までの相対度数の合計 |\n| 度数密度 | 度数 ÷ 階級幅（ヒストグラムの高さ） |\n\n■ 相対度数の特徴\n・全階級の相対度数の合計 = 1\n・母集団の確率分布の近似になる\n・サイズの異なるデータセットを比較できる\n\n■ 選択肢④「度数÷階級幅」は「度数密度」\n階級幅が異なるヒストグラムを正しく描くときに使います。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.2節「量的データの分布」（度数分布表・相対度数）", "difficulty": "basic", "type": "definition", "key_concept": "相対度数＝度数÷全データ数（全合計が1になる比率）", "common_mistake": "累積度数（合計していく値）と相対度数（全体に占める割合）を混同する。または度数密度（度数÷階級幅）と誤答する。"}, {"id": "ks007", "unit": "記述統計", "question": "平均値 x̄ = 50、標準偏差 s = 10 のデータにおいて、値 x = 65 の標準化得点（Z スコア）はどれか。", "choices": ["0.5", "1.0", "1.5", "2.0"], "answer": 2, "explanation": "【正解】1.5\n\n■ Zスコア（標準化得点）の公式\nZ = (x − x̄) / s\n\n■ 計算\nZ = (65 − 50) / 10 = 15 / 10 = 1.5\n\n■ Zスコアの解釈\n・Z=1.5 は「平均より1.5標準偏差分大きい」という意味\n・Z=0：平均と同じ\n・Z=1：平均より1SD上\n・Z=−1：平均より1SD下\n\n■ 何に使うの？\n① 単位の異なるデータを比較（例：身長と体重を統一的に扱う）\n② 偏差値（偏差値 = Z×10 + 50）の計算に使用\n③ 正規分布表で確率を計算するための変換\n\n■ 偏差値に変換すると？\n偏差値 = 1.5 × 10 + 50 = 65\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.3節「分布の特徴を表す指標」（標準化）\n　▶ 第2章 2.8節「主な連続型確率分布」（正規分布の標準化）", "difficulty": "basic", "type": "calculation", "key_concept": "Zスコア＝(x−平均)/標準偏差。「平均から何標準偏差離れているか」を表す", "common_mistake": "分子と分母を逆にして (s/x̄) と計算してしまう。または標準偏差ではなく分散で割ってしまう。"}, {"id": "ks008", "unit": "記述統計", "question": "次の記述のうち、正しいものはどれか。", "choices": ["平均値は必ず中央値より大きい", "標準偏差が0のとき、全てのデータは同じ値である", "外れ値が存在しても中央値は影響を受ける", "分散は常に標準偏差より大きい"], "answer": 1, "explanation": "【正解】標準偏差が0のとき、全てのデータは同じ値である\n\n■ 各選択肢の解説\n\n① 「平均値は必ず中央値より大きい」→ ❌\n右歪み分布では平均＞中央値ですが、左歪みでは平均＜中央値、対称分布では同じです。\n\n② 「標準偏差が0のとき、全データは同じ値」→ ✅\n標準偏差 s=0 は分散=0 を意味し、各データと平均の差がすべて0 → 全データが平均と同じ値（一定値）です。\n\n③ 「外れ値が存在しても中央値は影響を受ける」→ ❌\n中央値は外れ値の影響を受けにくい（ロバストな）統計量です。外れ値が1つ増えても順位の真ん中はほとんど変わりません。\n\n④ 「分散は常に標準偏差より大きい」→ ❌\n分散 < 1 のとき（例：s²=0.25 → s=0.5）、分散＜標準偏差になります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.3節「分布の特徴を表す指標」（代表値・散布度の性質）", "difficulty": "standard", "type": "property", "key_concept": "分散=0（SD=0）のとき全データは同一値。中央値は外れ値に強くロバストな統計量", "common_mistake": "「分散＞標準偏差」は常に成り立つと思い込む。s²<1 のとき s>s² となるため必ずしも正しくない。"}, {"id": "ks009", "unit": "記述統計", "question": "時系列データの分析において「移動平均」の目的として最も適切なものはどれか。", "choices": ["データを標準化して比較しやすくする", "短期的な変動を平滑化し、長期的なトレンドを見やすくする", "各時点のデータを合計する", "季節変動を取り除いた後の平均を求める"], "answer": 1, "explanation": "【正解】短期的な変動を平滑化し、長期的なトレンドを見やすくする\n\n■ 移動平均とは？\n連続するいくつかのデータの平均を順次計算し、滑らかな曲線を作る手法です。\n\n例：3期移動平均\n　t=3 の移動平均 = (x₁+x₂+x₃)/3\n　t=4 の移動平均 = (x₂+x₃+x₄)/3\n　…と順番にずらして計算\n\n■ 用途\n・株価や気温など、ノイズが多い時系列データのトレンド把握\n・期数（ウィンドウ幅）が大きいほど滑らかになるが、直近の変化に反応しにくくなる\n\n■ 季節調整（選択肢④）との違い\n移動平均は単純平均による平滑化。季節調整は季節性パターンを統計的に除去する別の手法です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章 1.7節「時系列データの記述と簡単な分析」（移動平均）", "difficulty": "standard", "type": "definition", "key_concept": "移動平均は連続するn個の値の平均を順にずらして計算し、時系列のノイズを平滑化する", "common_mistake": "移動平均＝季節調整と混同する。移動平均は単純な平滑化であり、季節変動を明示的に除去する手法とは異なる。"}, {"id": "s001", "unit": "記述統計", "question": "次のデータの中央値はどれか。\n\n3, 7, 2, 9, 5, 1, 8", "choices": ["3", "5", "7", "2"], "answer": 1, "explanation": "【正解】5\n\n■ 中央値とは？\n中央値（メジアン）とは、データを小さい順に並べたとき、ちょうど真ん中に来る値のことです。平均値と違い、極端に大きい・小さい値（外れ値）の影響を受けにくいという特徴があります。\n\n■ 求め方\n① まずデータを昇順（小→大）に並べます。\n　1, 2, 3, 5, 7, 8, 9\n② データの個数を数えます。→ 7個\n③ 真ん中の位置を求めます。\n　データが n 個のとき、中央値は「(n+1)÷2 番目」の値です。\n　(7+1)÷2 = 4 番目の値 → 5\n\n■ データが偶数個のときは？\n例えばデータが 8 個の場合、真ん中が1つに決まりません。その場合は 4番目と5番目の値の平均を中央値とします。\n\n■ 平均値との違い\n例えば「1, 2, 3, 4, 100」というデータでは、\n　・平均値 = 22（100に引っ張られる）\n　・中央値 = 3（真ん中の値なので影響を受けない）\nこのように、中央値は外れ値に強い代表値です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第1章「データの記述と要約」\n　▶ 1.3節「分布の特徴を表す指標」\n　　平均・中央値・最頻値などの代表値と、分散・標準偏差などの散布度が解説されています。", "difficulty": "basic", "type": "calculation", "key_concept": "データを昇順に並べて真ん中の値を求める中央値の計算手順", "common_mistake": "データを並べ替えずに元の順序の中央（4番目）を選んでしまう。必ず昇順に並べ直してから中央を探す。"}, {"id": "s002", "unit": "確率分布", "question": "正規分布 N(50, 10²) に従う確率変数 X について、P(40 ≤ X ≤ 60) の値として最も近いものはどれか。", "choices": ["約 0.500", "約 0.683", "約 0.954", "約 0.997"], "answer": 1, "explanation": "【正解】約 0.683\n\n■ 正規分布の表し方\nN(μ, σ²) と書いたとき、μ は平均、σ² は分散（σ は標準偏差）を意味します。この問題では N(50, 10²) なので、平均 μ=50、標準偏差 σ=10 です。\n\n■ 標準化（Z変換）とは？\nどんな正規分布も「平均0・標準偏差1の標準正規分布 N(0,1)」に変換できます。\n変換式：Z = (X − μ) / σ\n\n今回の変換：\n　X=40 のとき → Z = (40−50)/10 = −1\n　X=60 のとき → Z = (60−50)/10 = +1\nよって P(40 ≤ X ≤ 60) = P(−1 ≤ Z ≤ 1)\n\n■ 正規分布の「68-95-99.7 ルール」（必ず覚えよう！）\n標準正規分布において：\n　・平均 ± 1σ の範囲：約 68.3%（≈ 0.683）\n　・平均 ± 2σ の範囲：約 95.4%（≈ 0.954）\n　・平均 ± 3σ の範囲：約 99.7%（≈ 0.997）\n\nP(−1 ≤ Z ≤ 1) は「平均±1σ」の範囲なので、約 0.683 です。\n\n■ なぜ標準化するの？\n正規分布表は N(0,1) の確率しか載っていません。標準化することで、どんな正規分布の確率問題も表を使って解けるようになります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.8節「主な連続型確率分布」\n　　正規分布の定義・形状・標準化の方法が解説されています。\n　▶ 付録 7.5節「確率分布表の引き方」\n　　正規分布表の具体的な使い方が説明されています。", "difficulty": "standard", "type": "calculation", "key_concept": "正規分布の標準化（Z変換）と68-95-99.7ルールによる確率の読み取り", "common_mistake": "標準化せずに直接確率を当てようとする。N(50,10²)のままでは確率表を引けないので、必ずZ=(X-μ)/σで変換してから考える。"}, {"id": "s003", "unit": "仮説検定", "question": "有意水準5%で両側検定を行うとき、帰無仮説を棄却するために必要な標準正規分布の検定統計量 Z の絶対値の条件として正しいものはどれか。", "choices": ["|Z| > 1.65", "|Z| > 1.96", "|Z| > 2.33", "|Z| > 2.58"], "answer": 1, "explanation": "【正解】|Z| > 1.96\n\n■ 仮説検定の流れ（まず全体像を把握しよう）\n① 帰無仮説 H₀ と対立仮説 H₁ を立てる\n② 有意水準 α（「どのくらい稀なら偶然ではないと判断するか」の基準）を決める\n③ 検定統計量 Z を計算する\n④ Z が棄却域に入れば H₀ を棄却する\n\n■ 両側検定とは？\n「差がある方向が事前に分からない」とき（大きい・小さいどちらでも検討する）に使います。棄却域は分布の「両端」に設けます。\n\n有意水準 α=0.05（5%）の場合、両端合わせて5%なので、片側は2.5%ずつです。標準正規分布で上側2.5%点 = 1.96 なので、棄却域は |Z| > 1.96 です。\n\n■ 片側検定との違い\n片側検定（α=0.05）では、片側に5%全部割り当てるので、棄却域は Z > 1.65（または Z < −1.65）になります。\n\n■ 試験頻出！棄却点の早見表\n　有意水準　　両側検定　　片側検定\n　α=0.05　　 1.96　　　 1.65\n　α=0.01　　 2.58　　　 2.33\nこの4つの数値は必ず暗記しましょう！\n\n■「有意水準5%で有意」とは？\n「もし帰無仮説が正しいとしたら、今回のような結果が偶然起きる確率が5%未満だった」ということ。つまり「偶然とは考えにくい＝差がある」と判断します。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第4章「統計的仮説検定」\n　▶ 4.1節「仮説検定の考え方」\n　　帰無仮説・対立仮説・有意水準・p値の概念が解説されています。\n　▶ 4.2節「基本的な仮説検定の構造」\n　　両側検定・片側検定の棄却域の求め方が説明されています。\n　▶ 4.3節「1標本問題：1つの母集団の母数に関する検定」\n　　正規分布を使った z 検定の具体的な手順が解説されています。", "difficulty": "standard", "type": "definition", "key_concept": "両側検定では有意水準を両端に均等配分するため棄却点は1.96（α=0.05時）", "common_mistake": "片側検定の棄却点1.65と両側検定の棄却点1.96を混同する。両側は5%を2等分して各2.5%→1.96、片側は5%そのまま→1.65。"}, {"id": "st001", "unit": "推定", "question": "母集団から大きさ n の標本を抽出するとき、標本平均 X̄ の標準偏差（標準誤差）を表す式はどれか。ただし母標準偏差を σ とする。", "choices": ["σ/n", "σ/√n", "σ²/n", "√(σ/n)"], "answer": 1, "explanation": "【正解】σ/√n\n\n■ 標準誤差（SE: Standard Error）とは？\n標本平均 X̄ 自体も確率変数であり、標本ごとにバラつきます。その「ばらつきの大きさ」を標準誤差といいます。\n\n■ 公式\n標準誤差 SE = σ / √n\n\n■ 直感的な理解\n・n を大きくすると SE が小さくなる → サンプルを増やすほど推定が正確になる\n・n を4倍にすると SE は1/2になる（√4=2 なので）\n\n■ 母標準偏差 σ が未知のときは？\n実際には σ が未知なことが多く、標本標準偏差 s で代替します。\n推定された標準誤差 = s / √n\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.10節「標本分布」（標本平均の分布・標準誤差）", "difficulty": "basic", "type": "definition", "key_concept": "標準誤差は標本平均のばらつきを表し SE=σ/√n で求まる", "common_mistake": "母集団の標準偏差σと標本平均の標準誤差σ/√nを混同する。nが増えると標準誤差は小さくなるが、σ自体は変わらない。"}, {"id": "st002", "unit": "推定", "question": "母平均 μ、母標準偏差 σ=10 の母集団から n=100 の標本を抽出したとき、標本平均 X̄ が従う分布はどれか。", "choices": ["N(μ, 100)", "N(μ, 1)", "N(μ, 10)", "N(μ, 0.1)"], "answer": 1, "explanation": "【正解】N(μ, 1)\n\n■ 標本平均の分布（中心極限定理）\n母平均 μ、母分散 σ² の母集団から大きさ n の標本を抽出すると、標本平均 X̄ は次の分布に従います（n が大きいとき）。\n\nX̄ ～ N(μ, σ²/n)\n\n■ 計算\nσ²/n = 10²/100 = 100/100 = 1\n\nよって X̄ ～ N(μ, 1)\n\n■ 注意：N(μ, σ²/n) の第2引数は「分散」\n・分散 = σ²/n = 1\n・標準誤差（標準偏差）= σ/√n = 10/10 = 1\n\n■ 中心極限定理の重要性\n元の母集団がどんな分布でも、n が十分大きければ X̄ は正規分布に近づきます。これが統計的推測の理論的土台になっています。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章「確率と確率分布」\n　▶ 2.10節「標本分布」、2.11節「大数の法則と中心極限定理」", "difficulty": "standard", "type": "property", "key_concept": "中心極限定理：標本平均は X̄～N(μ,σ²/n) に従う", "common_mistake": "N(μ,σ²/n) の第2引数が「分散」であることを忘れ、標準偏差 σ/√n をそのまま代入してN(μ,1)ではなくN(μ,10)などと答える。"}, {"id": "st003", "unit": "推定", "question": "母分散が既知（σ²=25）のとき、大きさ n=100 の標本から得た標本平均 X̄=50 に基づいて構成した母平均 μ の95%信頼区間として正しいものはどれか。（z₀.₀₂₅=1.96）", "choices": ["[49.02, 50.98]", "[48.04, 51.96]", "[45, 55]", "[49.51, 50.49]"], "answer": 0, "explanation": "【正解】[49.02, 50.98]\n\n■ 母平均の95%信頼区間（母分散既知）\n公式：X̄ ± z₀.₀₂₅ × σ/√n\n\n■ 計算\nσ/√n = √25/√100 = 5/10 = 0.5\n誤差の幅：1.96 × 0.5 = 0.98\n\n信頼区間：[50 − 0.98, 50 + 0.98] = [49.02, 50.98]\n\n■ 95%信頼区間の正確な解釈\n「μ が [49.02, 50.98] に含まれる確率が95%」ではありません。\n正確には「同じ手順で区間を100回構成したとき、そのうち約95回は真の μ を含む」という意味です。\n\n■ 信頼度を99%にすると？\nz₀.₀₀₅ = 2.58 を使うので区間が広くなります。信頼度が高いほど区間は広くなります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第3章「統計的推定」\n　▶ 3.3節「点推定と区間推定」\n　▶ 3.4節「1標本問題：1つの母集団の母数に関する推定」", "difficulty": "standard", "type": "calculation", "key_concept": "母平均の95%信頼区間 X̄±z₀.₀₂₅×σ/√n の計算と解釈", "common_mistake": "「μがこの区間に含まれる確率が95%」と解釈する（誤り）。正しくは「この手順で作った区間の95%が真の母平均を含む」。"}, {"id": "st004", "unit": "推定", "question": "95%信頼区間の幅を現在の1/2にしたい。標本サイズ n を何倍にすればよいか。", "choices": ["2倍", "4倍", "√2倍", "1/2倍"], "answer": 1, "explanation": "【正解】4倍\n\n■ 信頼区間の幅と標本サイズの関係\n95%信頼区間の幅 = 2 × z × σ/√n\n\n幅は √n に反比例します。\n\n■ 計算\n幅を1/2にする → 1/√n を 1/2 倍にしたい\n→ √n を 2 倍にしたい\n→ n を 2² = 4 倍にする\n\n■ 一般公式\n幅を 1/k にしたい → n を k² 倍にする\n\n■ 実務的な意味\n精度を2倍にするにはコスト（標本数）が4倍かかります。精度向上は「収穫逓減」の関係にあります。調査設計の際に重要な考え方です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第3章「統計的推定」\n　▶ 3.4節「1標本問題」（標本サイズの決定）", "difficulty": "standard", "type": "application", "key_concept": "信頼区間の幅を1/k にするには標本サイズを k² 倍にする必要がある", "common_mistake": "幅を1/2にするために n を2倍と誤答する。幅は √n に反比例するので、1/2にするには √n を2倍、つまり n を4倍にする。"}, {"id": "st005", "unit": "推定", "question": "推定量の性質として「不偏性」の説明として正しいものはどれか。", "choices": ["推定量の分散が最小である", "推定量の期待値が真の母数に等しい", "n を大きくすると推定量が真の母数に収束する", "推定量が正規分布に従う"], "answer": 1, "explanation": "【正解】推定量の期待値が真の母数に等しい\n\n■ 良い推定量の条件\n推定量 θ̂ が真の母数 θ を推定するとき、次の性質が望まれます。\n\n① 不偏性（Unbiasedness）\n　E[θ̂] = θ\n　→ 推定量の期待値が真の値に等しい（偏りがない）\n\n② 一致性（Consistency）\n　n→∞ のとき θ̂ → θ（確率収束）\n　→ 選択肢③の説明\n\n③ 有効性（Efficiency）\n　同じクラスの推定量の中で分散が最小\n　→ 選択肢①の説明\n\n■ 標本分散の注意点\n母分散 σ² を推定するとき、n ではなく (n−1) で割った\n　s² = Σ(xᵢ−x̄)² / (n−1)\nを使います。これが不偏推定量です（E[s²] = σ²）。n で割ると過小評価になります。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第3章「統計的推定」\n　▶ 3.3節「点推定と区間推定」（不偏推定量・一致推定量）", "difficulty": "standard", "type": "definition", "key_concept": "不偏推定量の定義：期待値が真の母数に等しい（偏りがない）E[θ̂]=θ", "common_mistake": "不偏性・一致性・有効性の3つの性質を混同する。不偏性＝期待値が真値、一致性＝n増で収束、有効性＝分散最小。"}, {"id": "st006", "unit": "推定", "question": "母比率 p を推定したい。n=400 の標本から得た標本比率 p̂=0.6 に基づく95%信頼区間として正しいものはどれか。（z₀.₀₂₅=1.96）", "choices": ["[0.552, 0.648]", "[0.504, 0.696]", "[0.559, 0.641]", "[0.576, 0.624]"], "answer": 0, "explanation": "【正解】[0.559, 0.641]\n\n■ 母比率の95%信頼区間\n公式：p̂ ± z₀.₀₂₅ × √(p̂(1−p̂)/n)\n\n■ 計算\np̂(1−p̂)/n = 0.6 × 0.4 / 400 = 0.24/400 = 0.0006\n√0.0006 ≈ 0.0245\n\n誤差の幅：1.96 × 0.0245 ≈ 0.048\n\n信頼区間：[0.6 − 0.048, 0.6 + 0.048] = [0.552, 0.648]\n\n\n■ 母比率推定の使い場面\n・選挙の支持率調査\n・不良品率の推定\n・アンケートの賛成率推定\nなど「割合」を推定するときに使います。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第3章「統計的推定」\n　▶ 3.4節「1標本問題」（母比率の区間推定）", "difficulty": "standard", "type": "calculation", "key_concept": "母比率の信頼区間 p̂±z×√(p̂(1-p̂)/n) で標準誤差に二項分布を用いる", "common_mistake": "標準誤差の式を母平均の場合と同じ σ/√n と誤って使う。比率の推定では分散が p(1-p) であることを使う必要がある。"}, {"id": "st007", "unit": "推定", "question": "母分散が未知のとき、小標本（n=16）で母平均の区間推定を行う場合に用いる分布はどれか。", "choices": ["標準正規分布", "t分布（自由度15）", "χ²分布（自由度15）", "F分布"], "answer": 1, "explanation": "【正解】t分布（自由度15）\n\n■ 母分散が未知のときは t 分布を使う\n母分散 σ² が既知なら標準正規分布 Z を使えますが、未知のときは標本標準偏差 s で代替するため、\nZ に相当する統計量 T = (X̄ − μ) / (s/√n)\nは t 分布に従います。\n\n■ 自由度\nt 分布の形は「自由度 ν（ニュー）」によって決まります。\n1標本の場合：ν = n − 1 = 16 − 1 = 15\n\n■ t 分布の特徴\n・左右対称・釣り鐘型（正規分布と似た形）\n・正規分布より裾が厚い（t 値が大きくなる）\n・自由度が大きいほど正規分布に近づく（ν≥30 で実用上ほぼ同じ）\n\n■ n が大きければ正規分布近似でよいのでは？\nn が大きい場合は正規分布近似も使われますが、n=16 のような小標本では t 分布を使うのが正確です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第2章 2.10節「標本分布」（t分布の導出）\n　▶ 第3章 3.4節「1標本問題」（母分散未知の場合の推定）", "difficulty": "standard", "type": "definition", "key_concept": "母分散未知・小標本では t 分布を使い、自由度は n-1", "common_mistake": "母分散が未知でも標本サイズが小さくても常に標準正規分布を使おうとする。n<30 の目安で t 分布を用いる。"}, {"id": "st008", "unit": "推定", "question": "95%信頼区間と99%信頼区間を比べたとき、正しい説明はどれか。", "choices": ["99%信頼区間の方が幅が狭い", "99%信頼区間の方が幅が広い", "どちらの幅も等しい", "標本サイズによって変わる"], "answer": 1, "explanation": "【正解】99%信頼区間の方が幅が広い\n\n■ 信頼度と区間幅のトレードオフ\n信頼区間の幅 = 2 × z_α/2 × SE\n\n・95%信頼区間：z₀.₀₂₅ = 1.96\n・99%信頼区間：z₀.₀₀₅ = 2.58\n\n2.58 > 1.96 なので、99%の方が幅が広くなります。\n\n■ 直感的な理解\n「確実に当てたい（99%）なら範囲を広く取らなければならない」\n「的中率を高める（信頼度を上げる）ほど、的（区間）は大きくなる」\n\n■ 精度と信頼度のトレードオフ\n　信頼度↑ → 区間幅↑（精度↓）\n　標本サイズ↑ → 区間幅↓（精度↑）\n\n同じ精度（幅）で信頼度を上げたければ、標本サイズを増やすしかありません。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第3章「統計的推定」\n　▶ 3.3節「点推定と区間推定」（信頼度・区間幅の関係）", "difficulty": "basic", "type": "property", "key_concept": "信頼度が高いほど区間幅は広くなる（精度と信頼度はトレードオフ）", "common_mistake": "「99%信頼区間の方が精度が高い（幅が狭い）」と誤解する。信頼度を上げて確実に当てるためには的（区間）を広げるしかない。"}, {"id": "st009", "unit": "推定", "question": "2つの母集団の母平均の差 μ₁−μ₂ を推定したい。2標本がそれぞれ独立で、母分散が等しいと仮定するとき、共通の母分散を推定する統計量として正しいものはどれか。n₁、n₂ は各標本サイズ、s₁²、s₂² は各標本分散とする。", "choices": ["(s₁² + s₂²) / 2", "((n₁−1)s₁² + (n₂−1)s₂²) / (n₁+n₂−2)", "(s₁² + s₂²) / (n₁+n₂)", "√(s₁²/n₁ + s₂²/n₂)"], "answer": 1, "explanation": "【正解】((n₁−1)s₁² + (n₂−1)s₂²) / (n₁+n₂−2)\n\n■ プールされた分散（pooled variance）\n等分散の仮定のもとで2群の情報を合わせて母分散を推定したものをプールされた分散（合併分散）といいます。\n\nsp² = ((n₁−1)s₁² + (n₂−1)s₂²) / (n₁+n₂−2)\n\n■ なぜこの式？\n・分子：各群の「偏差平方和」を足し合わせる\n・分母：自由度の合計 (n₁−1) + (n₂−1) = n₁+n₂−2\n\n■ 使い方\nこのspを使って2標本t検定の検定統計量\nT = (X̄₁ − X̄₂) / (sp × √(1/n₁ + 1/n₂))\nを計算します。自由度は n₁+n₂−2 です。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第3章「統計的推定」\n　▶ 3.5節「2標本問題」（等分散の場合の推定）", "difficulty": "advanced", "type": "calculation", "key_concept": "等分散2標本t検定のプールされた分散は自由度で重み付けした加重平均", "common_mistake": "単純に(s₁²+s₂²)/2と算術平均してしまう。標本サイズが違う場合は自由度(n-1)で重み付けしないと不偏推定量にならない。"}, {"id": "st010", "unit": "推定", "question": "標本比率 p̂ に基づいて母比率 p の95%信頼区間を最も広くしたい。p̂ をどの値にするのが適切か。", "choices": ["p̂ = 0.1", "p̂ = 0.3", "p̂ = 0.5", "p̂ = 0.9"], "answer": 2, "explanation": "【正解】p̂ = 0.5\n\n■ 信頼区間の幅と p̂ の関係\n母比率の信頼区間の幅は √(p̂(1−p̂)/n) に比例します。\n\np̂(1−p̂) の値：\n・p̂=0.1 → 0.1×0.9 = 0.09\n・p̂=0.3 → 0.3×0.7 = 0.21\n・p̂=0.5 → 0.5×0.5 = 0.25　← 最大！\n・p̂=0.9 → 0.9×0.1 = 0.09\n\np̂=0.5 のとき p̂(1−p̂) が最大となり、信頼区間が最も広くなります。\n\n■ 実務への応用\n事前に p が分からないとき、保守的に p̂=0.5 を仮定して必要な標本サイズを計算すると、どんな p でも必要な精度を確保できます。これを「最大誤差保証」といいます。\n\n📖 参照：「統計学基礎」（ISBN 978-4-489-02227-2）\n　▶ 第3章「統計的推定」\n　▶ 3.4節「1標本問題」（母比率の推定・標本サイズの決定）", "difficulty": "advanced", "type": "application", "key_concept": "p̂(1-p̂) は p̂=0.5 のとき最大値0.25をとり、信頼区間幅が最大になる", "common_mistake": "p̂=0.9 や 0.1 が最大と誤答する。二次関数 f(p)=p(1-p) のグラフを思い浮かべると p=0.5 が頂点とわかる。"}];
+const DIFF_LABEL = { basic:'基礎', standard:'標準', advanced:'応用' };
+let selectedUnits = new Set(['全単元']);
+let selectedDiff = 'all', selectedCount = 10;
+let quizQueue = [], currentIdx = 0, results = [];
+let reviewMode = false, wrongIds = [];
+
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active'); window.scrollTo(0,0);
+}
+function initHome() {
+  const units=['全単元',...new Set(ALL_QUESTIONS.map(q=>q.unit))];
+  const grid=document.getElementById('unit-grid'); grid.innerHTML='';
+  units.forEach(u=>{
+    const el=document.createElement('div');
+    el.className='unit-chip'+(u==='全単元'?' all-chip':'')+(selectedUnits.has(u)?' selected':'');
+    el.textContent=u; el.dataset.unit=u;
+    el.addEventListener('click',()=>toggleUnit(u)); grid.appendChild(el);
+  });
+  updateAvailableCount(); checkWrongList();
+}
+function toggleUnit(u) {
+  if(u==='全単元'){selectedUnits=new Set(['全単元']);}
+  else{
+    selectedUnits.delete('全単元');
+    if(selectedUnits.has(u)){selectedUnits.delete(u);if(selectedUnits.size===0)selectedUnits.add('全単元');}
+    else selectedUnits.add(u);
+  }
+  document.querySelectorAll('.unit-chip').forEach(el=>el.classList.toggle('selected',selectedUnits.has(el.dataset.unit)));
+  updateAvailableCount();
+}
+document.querySelectorAll('.diff-chip').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    document.querySelectorAll('.diff-chip').forEach(c=>c.classList.remove('selected'));
+    chip.classList.add('selected'); selectedDiff=chip.dataset.diff; updateAvailableCount();
+  });
+});
+function getFilteredQuestions() {
+  let qs=ALL_QUESTIONS;
+  if(!selectedUnits.has('全単元')) qs=qs.filter(q=>selectedUnits.has(q.unit));
+  if(selectedDiff!=='all') qs=qs.filter(q=>q.difficulty===selectedDiff);
+  return qs;
+}
+function updateAvailableCount() {
+  document.getElementById('available-count').textContent=`この条件で ${getFilteredQuestions().length} 問あります`;
+}
+function checkWrongList() {
+  wrongIds=JSON.parse(localStorage.getItem('wrongIds')||'[]');
+  const btn=document.getElementById('btn-review');
+  btn.style.display=wrongIds.length>0?'block':'none';
+  if(wrongIds.length>0) btn.textContent=`🔁 間違えた問題を復習（${wrongIds.length}問）`;
+}
+document.querySelectorAll('.count-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedCount=btn.dataset.count==='all'?'all':parseInt(btn.dataset.count);
+  });
+});
+document.getElementById('btn-start').addEventListener('click',()=>{reviewMode=false;startQuiz(getFilteredQuestions());});
+document.getElementById('btn-review').addEventListener('click',()=>{
+  reviewMode=true;
+  const qs=ALL_QUESTIONS.filter(q=>wrongIds.includes(q.id));
+  if(qs.length===0){alert('復習する問題がありません');return;}
+  startQuiz(qs);
+});
+document.getElementById('btn-history').addEventListener('click',()=>{renderHistory();showScreen('screen-history');});
+function startQuiz(pool) {
+  let qs=shuffle(pool);
+  if(selectedCount!=='all') qs=qs.slice(0,Math.min(selectedCount,qs.length));
+  quizQueue=qs.map(q=>{
+    const choices=q.choices.map((text,i)=>({text,orig:i}));
+    const shuffled=shuffle(choices);
+    const newAnswer=shuffled.findIndex(c=>c.orig===q.answer);
+    return{...q,shuffledChoices:shuffled.map(c=>c.text),shuffledAnswer:newAnswer};
+  });
+  currentIdx=0; results=[];
+  showScreen('screen-quiz'); renderQuestion();
+}
+function renderQuestion() {
+  const q=quizQueue[currentIdx],total=quizQueue.length;
+  const correct=results.filter(r=>r.correct).length;
+  document.getElementById('q-index').textContent=`${currentIdx+1} / ${total}`;
+  document.getElementById('q-score-live').textContent=currentIdx>0?`${correct}/${currentIdx}正解`:'';
+  document.getElementById('progress-fill').style.width=`${(currentIdx/total)*100}%`;
+  document.getElementById('q-unit').textContent=q.unit;
+  const db=document.getElementById('q-diff-badge');
+  if(q.difficulty){db.textContent=DIFF_LABEL[q.difficulty]||q.difficulty;db.className=`diff-badge ${q.difficulty}`;db.style.display='inline-block';}
+  else db.style.display='none';
+  document.getElementById('q-text').textContent=q.question;
+  const choicesEl=document.getElementById('q-choices'); choicesEl.innerHTML='';
+  q.shuffledChoices.forEach((text,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.textContent=`${String.fromCharCode(65+i)}. ${text}`;
+    btn.addEventListener('click',()=>selectAnswer(i,q));
+    choicesEl.appendChild(btn);
+  });
+  document.getElementById('q-explanation').className='explanation';
+  document.getElementById('q-explanation').innerHTML='';
+  document.getElementById('q-point').style.display='none';
+  document.getElementById('q-mistake').style.display='none';
+  document.getElementById('next-wrap').className='next-wrap';
+}
+function selectAnswer(chosen,q) {
+  document.querySelectorAll('.choice-btn').forEach((btn,i)=>{
+    btn.disabled=true;
+    if(i===q.shuffledAnswer) btn.classList.add('correct');
+    else if(i===chosen) btn.classList.add('wrong');
+  });
+  const correct=chosen===q.shuffledAnswer;
+  results.push({q,chosen,correct});
+  const expEl=document.getElementById('q-explanation');
+  const badge=correct?`<div class="result-badge ok">✅ 正解！</div>`:`<div class="result-badge ng">❌ 不正解</div>`;
+  expEl.innerHTML=badge+q.explanation.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  expEl.className='explanation show';
+  if(q.key_concept){document.getElementById('q-point-text').textContent=q.key_concept;document.getElementById('q-point').style.display='block';}
+  if(!correct&&q.common_mistake){document.getElementById('q-mistake-text').textContent=q.common_mistake;document.getElementById('q-mistake').style.display='block';}
+  document.getElementById('next-wrap').className='next-wrap show';
+}
+document.getElementById('btn-next').addEventListener('click',()=>{
+  currentIdx++;
+  if(currentIdx>=quizQueue.length) finishQuiz();
+  else{renderQuestion();window.scrollTo(0,0);}
+});
+function finishQuiz() {
+  const total=results.length,correct=results.filter(r=>r.correct).length;
+  const pct=Math.round((correct/total)*100);
+  document.getElementById('score-circle').style.setProperty('--pct',`${pct}%`);
+  document.getElementById('score-num').textContent=correct;
+  document.getElementById('score-denom').textContent=`/ ${total} 問`;
+  document.getElementById('stat-correct').textContent=correct;
+  document.getElementById('stat-wrong').textContent=total-correct;
+  document.getElementById('stat-pct').textContent=`${pct}%`;
+  const msgs=[[100,'🎉 満点！完璧です！'],[80,'👏 素晴らしい！'],[60,'😊 もう少しで合格ライン！'],[0,'💪 復習して再挑戦しよう！']];
+  document.getElementById('result-msg').textContent=msgs.find(([t])=>pct>=t)[1];
+  const list=document.getElementById('result-list'); list.innerHTML='';
+  results.forEach((r,i)=>{
+    const li=document.createElement('li');
+    const dl=r.q.difficulty?` [${DIFF_LABEL[r.q.difficulty]||r.q.difficulty}]`:'';
+    li.innerHTML=`<span class="dot ${r.correct?'ok':'ng'}"></span>Q${i+1}.${dl} ${r.q.question.slice(0,28)}${r.q.question.length>28?'…':''}`;
+    list.appendChild(li);
+  });
+  saveHistory(correct,total,pct); updateWrongList();
+  document.getElementById('btn-review-result').style.display=results.some(r=>!r.correct)?'block':'none';
+  showScreen('screen-result');
+}
+function saveHistory(correct,total,pct){
+  const history=JSON.parse(localStorage.getItem('drillHistory')||'[]');
+  const dl=selectedDiff==='all'?'全難易度':(DIFF_LABEL[selectedDiff]||selectedDiff);
+  history.unshift({date:new Date().toLocaleString('ja-JP'),correct,total,pct,
+    mode:reviewMode?'復習':([...selectedUnits].join(',')+' / '+dl)});
+  localStorage.setItem('drillHistory',JSON.stringify(history.slice(0,50)));
+}
+function updateWrongList(){
+  let wrong=JSON.parse(localStorage.getItem('wrongIds')||'[]');
+  results.forEach(r=>{
+    if(!r.correct){if(!wrong.includes(r.q.id))wrong.push(r.q.id);}
+    else wrong=wrong.filter(id=>id!==r.q.id);
+  });
+  localStorage.setItem('wrongIds',JSON.stringify(wrong));
+}
+document.getElementById('btn-retry').addEventListener('click',()=>{
+  currentIdx=0;results=[];
+  startQuiz(reviewMode?ALL_QUESTIONS.filter(q=>wrongIds.includes(q.id)):getFilteredQuestions());
+});
+document.getElementById('btn-home').addEventListener('click',()=>{showScreen('screen-home');initHome();});
+document.getElementById('btn-review-result').addEventListener('click',()=>{
+  reviewMode=true; startQuiz(results.filter(r=>!r.correct).map(r=>r.q));
+});
+function renderHistory(){
+  const history=JSON.parse(localStorage.getItem('drillHistory')||'[]');
+  const el=document.getElementById('history-content');
+  if(history.length===0){el.innerHTML="<p style='color:var(--sub);font-size:.9rem'>まだ記録がありません</p>";return;}
+  el.innerHTML=history.map(h=>`
+    <div class="record-item">
+      <div><div style="font-weight:700">${h.pct}% (${h.correct}/${h.total}問正解)</div>
+      <div style="font-size:.75rem;color:var(--sub)">${h.date} · ${h.mode}</div></div>
+      <div style="font-size:1.3rem">${h.pct>=80?'🌟':h.pct>=60?'⭕':'❌'}</div>
+    </div>`).join('');
+}
+document.getElementById('btn-history-back').addEventListener('click',()=>{showScreen('screen-home');initHome();});
+document.getElementById('btn-clear-history').addEventListener('click',()=>{
+  if(confirm('履歴と復習リストをリセットしますか？')){
+    localStorage.removeItem('drillHistory');localStorage.removeItem('wrongIds');
+    renderHistory();initHome();
+  }
+});
+
+// ── Service Worker 登録 ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+
+initHome();
+</script>
+</body>
+</html>
